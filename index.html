@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RİTİM — Tarayıcı Ritim Makinesi</title>
+<style>
+  :root{
+    --bg:#0a0a0c;
+    --panel:#141419;
+    --panel-2:#1c1c23;
+    --line:#2a2a34;
+    --text:#e8e8ee;
+    --dim:#7b7b8a;
+    --sonuk:#55555f;
+    --amber:#ffb000;
+    --kirmizi:#ff5a5a;
+    --bas:#4da6ff;
+    --A:#ffb000; --B:#3ddbd9; --C:#8f7dff; --D:#ff6fd8;
+    --etiketEni:126px;
+    --hucreEni:38px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    padding:24px 16px 60px; -webkit-font-smoothing:antialiased;
+  }
+  .kasa{max-width:1020px;margin:0 auto}
+
+  /* ---- üst bar ---- */
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+  h1{
+    margin:0;font-size:30px;letter-spacing:.5em;font-weight:700;
+    color:var(--amber); text-shadow:0 0 22px rgba(255,176,0,.45);
+  }
+  #durum{
+    font-size:12px;color:var(--dim);letter-spacing:.08em;
+    border:1px solid var(--line);border-radius:20px;padding:7px 15px;background:var(--panel);
+  }
+  #durum b{color:var(--text);font-weight:400}
+
+  /* ---- paneller ---- */
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:12px}
+  .panelBaslik{font-size:10px;letter-spacing:.18em;color:var(--sonuk);padding:11px 16px 0}
+
+  /* ---- kontrol / transport ---- */
+  .kontrol{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:14px 16px}
+  button{
+    font:inherit;color:var(--text);background:var(--panel-2);
+    border:1px solid var(--line);border-radius:7px;padding:9px 15px;
+    cursor:pointer;letter-spacing:.08em;transition:.12s;
+  }
+  button:hover{border-color:#4a4a5a;background:#24242d}
+  button:disabled{opacity:.45;cursor:default}
+  #calBtn{min-width:118px;font-weight:700;border-color:#3a5a3a;color:#8fe38f}
+  #calBtn.calisiyor{background:#3a1414;border-color:#7a2a2a;color:#ff8a8a}
+  .kaydir{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--dim)}
+  .kaydir{gap:7px}
+  .kaydir b{color:var(--text);min-width:36px;text-align:right;font-variant-numeric:tabular-nums}
+  input[type=range]{width:92px;accent-color:var(--amber)}
+  .ayirac{width:1px;height:26px;background:var(--line)}
+  .ince{padding:7px 12px;font-size:11px;color:var(--dim)}
+  .ince:hover{color:var(--text)}
+  .ince.acik{color:var(--kirmizi);border-color:#7a2a2a}
+  #wavBtn{border-color:#2f4a5e;color:var(--bas)}
+
+  select{
+    font:inherit;font-size:11px;color:var(--text);background:var(--panel-2);
+    border:1px solid var(--line);border-radius:7px;padding:7px 9px;
+    letter-spacing:.06em;cursor:pointer;
+  }
+  select:focus{outline:none;border-color:var(--amber)}
+
+  /* ---- satırlar (hazır ritim / şarkı / kayıt) ---- */
+  .gruplar{padding:12px 16px 14px}
+  .grup{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:7px}
+  .grup:last-child{margin-bottom:0}
+  .grupAd{
+    width:var(--etiketEni);min-width:var(--etiketEni);text-align:right;padding-right:12px;
+    font-size:11px;color:var(--sonuk);letter-spacing:.06em;
+  }
+  .grup button{padding:6px 11px;font-size:11px;color:var(--dim)}
+  .grup button:hover{color:var(--text)}
+  .grup button.secili{
+    background:var(--amber);border-color:var(--amber);color:#0a0a0c;font-weight:700;
+    box-shadow:0 0 16px -3px var(--amber);
+  }
+  .ipucu{font-size:10px;color:#45454f;letter-spacing:.05em;font-style:italic}
+
+  /* ---- şarkı: mod, dizilim ---- */
+  .mod button.secili{background:var(--amber);border-color:var(--amber);color:#0a0a0c;font-weight:700}
+  .slot{
+    width:42px;min-width:42px;height:38px;padding:0;font-size:13px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;color:var(--sonuk);
+  }
+  .slot.dolu{color:#0a0a0c;border-color:var(--h);background:var(--h)}
+  .slot.caliyor{outline:2px solid #fff;outline-offset:2px}
+  .slot.dolu:hover{background:var(--h);border-color:#fff}
+
+  /* ---- bölüm seçici ---- */
+  .bolumSerit{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:13px 16px 0}
+  .bolumSerit .basAd{
+    width:var(--etiketEni);min-width:var(--etiketEni);text-align:right;padding-right:12px;
+    font-size:11px;letter-spacing:.14em;color:var(--sonuk);
+  }
+  .bolumBtn{
+    width:42px;min-width:42px;padding:7px 0;font-size:12px;font-weight:700;color:var(--sonuk);
+    position:relative;
+  }
+  .bolumBtn.secili{background:var(--h);border-color:var(--h);color:#0a0a0c}
+  .bolumBtn .nokta{
+    position:absolute;top:4px;right:5px;width:5px;height:5px;border-radius:50%;
+    background:var(--h);opacity:0;
+  }
+  .bolumBtn.doluBolum .nokta{opacity:.85}
+  .bolumBtn.secili .nokta{background:#0a0a0c;opacity:.5}
+
+  /* ---- kayıtlarım ---- */
+  .kayit{
+    display:inline-flex;align-items:center;gap:2px;
+    border:1px solid var(--line);border-radius:7px;background:var(--panel-2);
+    overflow:hidden;transition:.12s;
+  }
+  .kayit b{font-weight:400;font-size:11px;color:var(--dim);padding:6px 4px 6px 11px;cursor:pointer;letter-spacing:.06em}
+  .kayit:hover{border-color:#4a4a5a}
+  .kayit:hover b{color:var(--text)}
+  .kayit.secili{background:var(--amber);border-color:var(--amber)}
+  .kayit.secili b{color:#0a0a0c;font-weight:700}
+  .kayit i{font-style:normal;font-size:13px;line-height:1;color:var(--sonuk);padding:6px 9px 7px;cursor:pointer}
+  .kayit i:hover{color:var(--kirmizi)}
+  .kayit.secili i{color:rgba(10,10,12,.45)}
+  .kayit.onay{border-color:var(--kirmizi);background:#2a1414}
+  .kayit.onay b,.kayit.onay i{color:var(--kirmizi)}
+  .bos{font-size:11px;color:var(--sonuk);font-style:italic}
+  input[type=text]{
+    font:inherit;font-size:11px;color:var(--text);background:var(--panel-2);
+    border:1px solid var(--line);border-radius:7px;padding:7px 11px;width:190px;letter-spacing:.06em;
+  }
+  input[type=text]:focus{outline:none;border-color:var(--amber)}
+  input[type=text]::placeholder{color:var(--sonuk)}
+
+  /* ---- ızgara ---- */
+  .izgara{padding:12px 16px 14px;overflow-x:auto}
+  .satir{display:flex;align-items:center;gap:3px;margin-bottom:5px}
+  .satir:last-child{margin-bottom:0}
+  .satir.susturuldu .adim{opacity:.28}
+
+  .etiket{
+    width:var(--etiketEni);min-width:var(--etiketEni);
+    display:flex;align-items:center;justify-content:flex-end;gap:7px;
+    padding-right:12px;font-size:11px;letter-spacing:.06em;
+    color:var(--dim);cursor:pointer;user-select:none;
+  }
+  .etiket:hover{color:var(--text)}
+  .etiket .sil{font-style:normal;font-size:13px;line-height:1;color:var(--sonuk);opacity:0;transition:.12s;padding:0 2px}
+  .etiket:hover .sil{opacity:1}
+  .etiket .sil:hover{color:var(--kirmizi)}
+  .satir.susturuldu .etiket span{opacity:.4;text-decoration:line-through}
+
+  .basliklar{margin-bottom:8px}
+  .numara{
+    width:var(--hucreEni);min-width:var(--hucreEni);height:20px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:10px;color:var(--sonuk);border-radius:4px;
+    background:#17171d;transition:background .05s,color .05s;
+  }
+  .numara.vurus{color:var(--dim)}
+  .numara.on{background:var(--amber);color:#0a0a0c;font-weight:700;box-shadow:0 0 14px -2px var(--amber)}
+  .numara.iz{background:rgba(255,176,0,.2)}
+
+  .adim{
+    width:var(--hucreEni);height:34px;min-width:var(--hucreEni);border-radius:5px;
+    background:#1a1a21;border:1px solid #26262f;cursor:pointer;
+    transition:transform .05s, background .08s, opacity .12s;
+  }
+  .adim:nth-child(4n+2){background:#20202a}   /* her 4'lük vuruşun başı koyu */
+  .adim:hover{border-color:#4a4a5a}
+  .adim.acik{background:var(--r);border-color:var(--r);box-shadow:0 0 12px -2px var(--r)}
+  .adim.simdi{transform:scaleY(1.14)}
+  .adim.simdi:not(.acik){background:#33333f}
+
+  /* ---- bas bölümü ---- */
+  .basSerit{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid var(--line);padding:12px 16px 0}
+  .basSerit .basAd{
+    width:var(--etiketEni);min-width:var(--etiketEni);text-align:right;padding-right:12px;
+    font-size:11px;letter-spacing:.14em;color:var(--bas);
+  }
+  .basSerit label{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--sonuk);letter-spacing:.1em}
+  .basIzgara{padding:10px 16px 14px;overflow-x:auto}
+  .basIzgara .satir{margin-bottom:3px}
+  .basIzgara.susturuldu .adim{opacity:.28}
+  .basEtiket{
+    width:var(--etiketEni);min-width:var(--etiketEni);
+    display:flex;align-items:center;justify-content:flex-end;gap:8px;
+    padding-right:12px;font-size:10px;color:var(--sonuk);user-select:none;
+  }
+  .basEtiket .derece{color:#3d3d47}
+  .basEtiket.kok{color:var(--bas)}
+  .basIzgara .adim{height:22px;border-radius:4px}
+  .basIzgara .adim.acik{box-shadow:0 0 12px -2px var(--bas)}
+
+  /* ---- bildirimler (alert yok) ---- */
+  .bildirimler{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:50}
+  .bildirim{
+    background:var(--panel-2);border:1px solid var(--line);border-left:3px solid var(--amber);
+    border-radius:7px;padding:11px 15px;font-size:12px;color:var(--text);
+    box-shadow:0 10px 30px rgba(0,0,0,.6);animation:gir .18s ease-out;
+  }
+  .bildirim.hata{border-left-color:var(--kirmizi)}
+  .bildirim.cikiyor{animation:cik .25s ease-in forwards}
+  @keyframes gir{from{opacity:0;transform:translateY(10px)}}
+  @keyframes cik{to{opacity:0;transform:translateX(14px)}}
+
+  footer{margin-top:20px;color:var(--dim);font-size:12px;line-height:1.85}
+  footer b{color:var(--amber);font-weight:400}
+  kbd{background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:1px 6px}
+</style>
+</head>
+<body>
+<div class="kasa">
+
+  <header>
+    <h1>RİTİM</h1>
+    <div id="durum">—</div>
+  </header>
+
+  <div class="panel">
+    <div class="kontrol">
+      <button id="calBtn">▶ ÇAL</button>
+      <div class="ayirac"></div>
+      <label class="kaydir">TEMPO <input type="range" id="bpm" min="60" max="200" value="96"><b id="bpmYazi">96</b></label>
+      <label class="kaydir">SWING <input type="range" id="swing" min="0" max="40" value="0"><b id="swingYazi">0%</b></label>
+      <label class="kaydir">SES <input type="range" id="ses" min="0" max="100" value="80"><b id="sesYazi">80</b></label>
+      <div class="ayirac"></div>
+      <button id="wavBtn" class="ince">⤓ WAV İNDİR</button>
+      <button id="temizle" class="ince">TEMİZLE</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panelBaslik">HAZIR RİTİMLER — seçtiğin bölüme yüklenir</div>
+    <div class="gruplar" id="ritimler"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panelBaslik">ŞARKI</div>
+    <div class="gruplar">
+      <div class="grup">
+        <div class="grupAd">HAZIR ŞARKI</div>
+        <div id="sarkilar" style="display:contents"></div>
+        <span class="ipucu">bir tanesine bas, gerisi kendi gelir</span>
+      </div>
+      <div class="grup mod">
+        <div class="grupAd">ÇALMA</div>
+        <button id="modDongu" class="secili">DÖNGÜ</button>
+        <button id="modSarki">ŞARKI</button>
+        <span class="ipucu" id="modIpucu">tek bölüm döner durur</span>
+      </div>
+      <div class="grup">
+        <div class="grupAd">DİZİLİM</div>
+        <div id="dizilimEl" style="display:contents"></div>
+        <span class="ipucu">kutulara bas: A → B → C → D → boş</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panelBaslik">KENDİ ŞARKILARIN</div>
+    <div class="gruplar">
+      <div class="grup">
+        <div class="grupAd">KAYITLARIM</div>
+        <div id="kayitlar" style="display:contents"></div>
+        <span class="bos" id="kayitYok">henüz kayıt yok</span>
+      </div>
+      <div class="grup">
+        <div class="grupAd"></div>
+        <input type="text" id="kayitAdi" placeholder="şarkına bir ad ver…" maxlength="24">
+        <button id="kaydetBtn" class="ince">KAYDET</button>
+        <div class="ayirac"></div>
+        <button id="yedekAl" class="ince">YEDEK AL</button>
+        <button id="yedekYukle" class="ince">YEDEĞİ YÜKLE</button>
+        <input type="file" id="dosya" accept=".json,application/json" hidden>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="bolumSerit">
+      <div class="basAd">BÖLÜM</div>
+      <div id="bolumler" style="display:contents"></div>
+      <span class="ipucu">hangisi seçiliyse aşağıdaki ızgara onu düzenler</span>
+    </div>
+
+    <div class="izgara" id="izgara"></div>
+
+    <div class="basSerit">
+      <div class="basAd">BAS</div>
+      <label>KÖK <select id="kok"></select></label>
+      <label>DİZİ <select id="dizi"></select></label>
+      <button id="basSustur" class="ince">SUSTUR</button>
+      <button id="basTemizle" class="ince">TEMİZLE</button>
+    </div>
+    <div class="izgara basIzgara" id="basIzgara"></div>
+  </div>
+
+  <footer>
+    <b>Nasıl kullanılır:</b> bir ritme tıkla ya da kutuları kendin doldur, <kbd>ÇAL</kbd>'a bas
+    (<kbd>boşluk</kbd> tuşu da olur). Enstrüman adına tıklarsan o satırı susturur, yanındaki
+    <b>×</b> satırı temizler.<br>
+    <b>Şarkı yapmak:</b> dört bölüm var — A, B, C, D. Her birine ayrı bir ritim kur, sonra
+    <b>DİZİLİM</b> kutularına bas ve sıralarını seç. <kbd>ŞARKI</kbd> moduna alınca dizilimi
+    baştan sona çalar. En kolay yol: yukarıdan hazır bir şarkıya basıp içini kurcalamak.<br>
+    <b>Bas hattı:</b> her sütuna tek nota konur. Kutular diziye bağlı olduğu için hangi notaya
+    basarsan bas kulağı tırmalamaz — <b>KÖK</b> perdeyi, <b>DİZİ</b> havayı değiştirir.<br>
+    <b>WAV İNDİR</b> o an çalanı ses dosyası yapıp bilgisayarına indirir; telefona atıp dinleyebilirsin.
+  </footer>
+
+</div>
+
+<div class="bildirimler" id="bildirimler"></div>
+
+<script>
+/* ============================================================
+   RİTİM — 16 adımlık ritim makinesi + bas hattı + şarkı modu
+   Hiç ses dosyası yok. Her ses Web Audio ile o an üretiliyor:
+   bir dalga başlatılıp sesi hızla kısılıyor. Kısılma süresi
+   karakteri belirliyor — kısa kesilirse "tık", uzun sönerse "bumm".
+   ============================================================ */
+
+const ADIM_SAYISI = 16;
+const BAS_DERECE  = 8;    // bas ızgarasındaki satır sayısı (kökten oktava)
+const BOLUM_SAYISI = 4;   // A B C D
+const SLOT_SAYISI  = 8;   // dizilimdeki kutu sayısı
+const BOLUM_ADLARI = ['A','B','C','D'];
+
+/* --- davullar: ad, renk, ses fonksiyonunun anahtarı --- */
+const ENSTRUMANLAR = [
+  { ad:'BAS DAVUL',   anahtar:'kick',  renk:'#ff4d4d' },
+  { ad:'TRAMPET',     anahtar:'snare', renk:'#ff9f2e' },
+  { ad:'HI-HAT',      anahtar:'hihat', renk:'#ffd83d' },
+  { ad:'AÇIK HI-HAT', anahtar:'ahihat',renk:'#9ee34f' },
+  { ad:'ALKIŞ',       anahtar:'clap',  renk:'#3ddbd9' },
+  { ad:'TOM',         anahtar:'tom',   renk:'#8f7dff' },
+  { ad:'ZİL',         anahtar:'zil',   renk:'#ff6fd8' },
+];
+
+/* --- diziler: kökten itibaren kaç yarım ses uzakta oldukları --- */
+const DIZILER = {
+  minor:      { ad:'Minör',      araliklar:[0,2,3,5,7,8,10,12] },
+  major:      { ad:'Majör',      araliklar:[0,2,4,5,7,9,11,12] },
+  pentatonik: { ad:'Pentatonik', araliklar:[0,3,5,7,10,12,15,17] },
+  blues:      { ad:'Blues',      araliklar:[0,3,5,6,7,10,12,15] },
+  hicaz:      { ad:'Hicaz',      araliklar:[0,1,4,5,7,8,10,12] },
+  frigyen:    { ad:'Frigyen',    araliklar:[0,1,3,5,7,8,10,12] },
+};
+const NOTALAR = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const KOK_EN_ALT = 33;              // A1 — bas için rahat bir taban
+const notaAdi = m => NOTALAR[m % 12] + (Math.floor(m / 12) - 1);
+const frekans = m => 440 * Math.pow(2, (m - 69) / 12);
+
+const BOS = '................';
+
+/* ============================================================
+   HAZIR RİTİMLER
+   Davul satırları enstrüman sırasıyla aynı:
+   bas davul · trampet · hi-hat · açık hi-hat · alkış · tom · zil
+   'x' = vur, '.' = sus. Her dizi tam 16 karakter.
+   bas: rakam = dizinin kaçıncı notası (1 kök, 5 beşli, 8 oktav), '.' = sus.
+   ============================================================ */
+const GRUPLAR = [
+  { grup:'KLASİK', ritimler:[
+    { ad:'TEMEL', bpm:96, swing:0, satirlar:[
+      'x...x...x...x...','....x.......x...','x.x.x.x.x.x.x.x.',BOS,BOS,BOS,BOS],
+      bas:'1.......5.......' },
+    { ad:'ROCK', bpm:128, swing:0, satirlar:[
+      'x.....x.x.....x.','....x.......x...','x.x.x.x.x.x.x.x.','..............x.',BOS,BOS,BOS],
+      bas:'1...1...5...4...' },
+    { ad:'POP', bpm:112, swing:0, satirlar:[
+      'x.......x.......','....x.......x...','x.x.x.x.x.x.x.x.',BOS,'....x.......x...',BOS,BOS],
+      bas:'1...1...6...5...' },
+    { ad:'MARŞ', bpm:118, swing:0, satirlar:[
+      'x...x...x...x...','x.xxx...x.xxx...',BOS,BOS,BOS,'....x.......x...',BOS],
+      bas:'1...1...5...5...' },
+    { ad:'SHUFFLE', bpm:92, swing:33, dizi:'blues', satirlar:[
+      'x...x...x...x...','....x.......x...','x.x.x.x.x.x.x.x.',BOS,BOS,BOS,BOS],
+      bas:'1...3...5...3...' },
+  ]},
+
+  { grup:'DANS', ritimler:[
+    { ad:'DİSKO', bpm:120, swing:0, satirlar:[
+      'x...x...x...x...','....x.......x...','x...x...x...x...','..x...x...x...x.','....x.......x...',BOS,BOS],
+      bas:'1.8.1.8.1.8.1.8.' },
+    { ad:'HOUSE', bpm:126, swing:0, satirlar:[
+      'x...x...x...x...',BOS,'x.x.x.x.x.x.x.x.','..x...x...x...x.','....x.......x...',BOS,BOS],
+      bas:'1...1.8.1...5...' },
+    { ad:'TECHNO', bpm:132, swing:0, satirlar:[
+      'x...x...x...x...',BOS,'..x...x...x...x.','..............x.','....x.......x...','............x.x.',BOS],
+      bas:'1.1.1.1.8.8.5.5.' },
+    { ad:'DUBSTEP', bpm:140, swing:0, satirlar:[
+      'x.........x.....','........x.......','..x...x...x...x.','..............x.','........x.......','.............x..',BOS],
+      bas:'1.........5.....' },
+    { ad:'DRUM & BASS', bpm:174, swing:0, satirlar:[
+      'x.....x.....x...','....x.......x...','x.x.x.x.x.x.x.x.','..............x.',BOS,'..........x.....',BOS],
+      bas:'1.....1...5.....' },
+  ]},
+
+  { grup:'HIP-HOP', ritimler:[
+    { ad:'BOOM BAP', bpm:88, swing:20, satirlar:[
+      'x.......x..x....','....x.......x...','x.x.x.x.x.x.x.x.',BOS,BOS,BOS,BOS],
+      bas:'1...5...1...4...' },
+    { ad:'TRAP', bpm:140, swing:0, satirlar:[
+      'x.....x...x.....','........x.......','x.xxx.x.xxx.x.xx',BOS,'........x.......','..............x.',BOS],
+      bas:'1.....1...4...5.' },
+    { ad:'DRILL', bpm:142, swing:8, satirlar:[
+      'x.....x.....x.x.','........x.......','x.x.xxx.x.x.xxx.',BOS,'........x.......','.............x..',BOS],
+      bas:'1.....1.....5.4.' },
+    { ad:'LO-FI', bpm:78, swing:26, satirlar:[
+      'x.......x.......','....x.......x...','x..x..x.x..x..x.',BOS,BOS,BOS,BOS],
+      bas:'1.......5...4...' },
+  ]},
+
+  { grup:'GROOVE', ritimler:[
+    { ad:'FUNK', bpm:104, swing:16, satirlar:[
+      'x..x..x...x..x..','....x.......x...','xxxxxxxxxxxxxxxx',BOS,BOS,'..............x.',BOS],
+      bas:'1..1..1.5..5.4..' },
+    { ad:'AFROBEAT', bpm:108, swing:10, satirlar:[
+      'x..x..x...x.x...','....x.......x...','x.xxx.xxx.xxx.xx',BOS,'..x...x...x...x.','......x.......x.','x..x..x...x.x...'],
+      bas:'1..1..5...1.5...' },
+    { ad:'REGGAETON', bpm:95, swing:0, satirlar:[
+      'x...x...x...x...','...x..x....x..x.','x.x.x.x.x.x.x.x.',BOS,'...x..x....x..x.',BOS,BOS],
+      bas:'1...1...5...5...' },
+    { ad:'SAMBA', bpm:100, swing:0, satirlar:[
+      'x..x.x..x..x.x..','....x..x....x..x','x.x.x.x.x.x.x.x.',BOS,BOS,'..............x.','..x..x.x..x..x.x'],
+      bas:'1..1.5..1..1.5..' },
+    { ad:'BOSSA', bpm:122, swing:0, satirlar:[
+      'x..x..x...x..x..',BOS,'x.x.x.x.x.x.x.x.',BOS,BOS,BOS,'..x...x.x...x...'],
+      bas:'1..5..1...5..1..' },
+  ]},
+
+  { grup:'ÖZEL', ritimler:[
+    { ad:'KARA ŞİMŞEK', bpm:150, swing:0, satirlar:[
+      'x..x..x.x..x..x.','....x.......x...','xxxxxxxxxxxxxxxx',BOS,'....x.......x...','x.............x.','..x...x...x...x.'],
+      bas:'1.1.1.1.5.5.4.4.' },
+    { ad:'HALAY', bpm:130, swing:0, dizi:'frigyen', satirlar:[
+      'x...x...x.x.x...','..x...x...x...x.',BOS,BOS,BOS,'............x.x.',BOS],
+      bas:'1...1...1.5.1...' },
+    { ad:'ÇİFTETELLİ', bpm:102, swing:0, dizi:'hicaz', satirlar:[
+      'x..x....x.x.....','......x.....x.x.','x.x.x.x.x.x.x.x.',BOS,BOS,BOS,BOS],
+      bas:'1..1....5.4.....' },
+  ]},
+];
+const TUM_RITIMLER = GRUPLAR.flatMap(g => g.ritimler);
+
+/* ============================================================
+   HAZIR ŞARKILAR
+   Dört bölüm (A B C D) + hangi sırayla çalınacağı.
+   dizilim'deki harfler bölüm adları, '-' boş kutu demek.
+   ============================================================ */
+const SARKILAR = [
+  { ad:'GECE', bpm:84, swing:22, kok:33, dizi:'minor', dizilim:'AABACDBA', bolumler:[
+    { satirlar:['x.......x.......','....x.......x...','x..x..x.x..x..x.',BOS,BOS,BOS,BOS], bas:'1.......5.......' },
+    { satirlar:['x.......x...x...','....x.......x...','x.x.x.x.x.x.x.x.','..............x.','....x.......x...',BOS,BOS], bas:'1...1...5...4...' },
+    { satirlar:['x...............',BOS,BOS,BOS,BOS,BOS,'..x...x...x...x.'], bas:'1...3...5...3...' },
+    { satirlar:['x..x....x...x...','....x.......x...','x.x.x.x.x.x.x.x.','......x.......x.','....x.......x...','............x.x.',BOS], bas:'1..1..5...1.5...' },
+  ]},
+
+  { ad:'ÇARŞI', bpm:104, swing:0, kok:38, dizi:'hicaz', dizilim:'AABCABDD', bolumler:[
+    { satirlar:['x..x....x.x.....','......x.....x.x.','x.x.x.x.x.x.x.x.',BOS,BOS,BOS,BOS], bas:'1..1....5.4.....' },
+    { satirlar:['x..x....x.x.....','......x.....x.x.','x.x.x.x.x.x.x.x.',BOS,'......x.....x...',BOS,'..x...x...x...x.'], bas:'1..1....5.4...2.' },
+    { satirlar:['x.......x.......',BOS,BOS,BOS,BOS,'x.x.x...x.x.x...',BOS], bas:'1.......4.......' },
+    { satirlar:['x..x..x.x.x...x.','......x.....x.x.','xxxxxxxxxxxxxxxx',BOS,'......x.....x...','............x.x.','..x...x...x...x.'], bas:'1..1.5..4.3.1...' },
+  ]},
+
+  { ad:'OTOBAN', bpm:146, swing:0, kok:40, dizi:'minor', dizilim:'ABCCABCD', bolumler:[
+    { satirlar:['x...x...x...x...',BOS,'..x...x...x...x.',BOS,BOS,BOS,BOS], bas:'1.1.1.1.1.1.1.1.' },
+    { satirlar:['x...x...x...x...','....x.......x...','x.x.x.x.x.x.x.x.','..............x.','....x.......x...',BOS,BOS], bas:'1.1.1.1.8.8.5.5.' },
+    { satirlar:['x..x..x.x..x..x.','....x.......x...','xxxxxxxxxxxxxxxx',BOS,'....x.......x...','x.............x.','..x...x...x...x.'], bas:'1.1.5.5.4.4.5.5.' },
+    { satirlar:['x.......x.......','............x.x.',BOS,'..............x.',BOS,'........x.x.x.x.',BOS], bas:'1.......5.......' },
+  ]},
+];
+
+/* 16 karakter kuralını hem ritimler hem şarkılar için denetle */
+function uzunlukDenetle(etiket, satirlar, bas){
+  satirlar.forEach((d, i) => {
+    if (d.length !== ADIM_SAYISI) console.warn(`${etiket} — ${i + 1}. davul satırı ${d.length} karakter, 16 olmalı`);
+  });
+  if (bas && bas.length !== ADIM_SAYISI) console.warn(`${etiket} — bas satırı ${bas.length} karakter, 16 olmalı`);
+}
+TUM_RITIMLER.forEach(r => uzunlukDenetle(`"${r.ad}" ritmi`, r.satirlar, r.bas));
+SARKILAR.forEach(s => s.bolumler.forEach((b, i) =>
+  uzunlukDenetle(`"${s.ad}" şarkısının ${BOLUM_ADLARI[i]} bölümü`, b.satirlar, b.bas)));
+
+/* ============================================================
+   ARAYÜZ ELEMANLARI
+   ============================================================ */
+const izgara      = document.getElementById('izgara');
+const basIzgaraEl = document.getElementById('basIzgara');
+const ritimlerEl  = document.getElementById('ritimler');
+const sarkilarEl  = document.getElementById('sarkilar');
+const dizilimUI   = document.getElementById('dizilimEl');
+const bolumlerUI  = document.getElementById('bolumler');
+const kayitlarEl  = document.getElementById('kayitlar');
+const kayitYokEl  = document.getElementById('kayitYok');
+const kayitAdiEl  = document.getElementById('kayitAdi');
+const durumEl     = document.getElementById('durum');
+const bildirimEl  = document.getElementById('bildirimler');
+const calBtn      = document.getElementById('calBtn');
+const wavBtn      = document.getElementById('wavBtn');
+const bpm         = document.getElementById('bpm');
+const swing       = document.getElementById('swing');
+const ses         = document.getElementById('ses');
+const kokSec      = document.getElementById('kok');
+const diziSec     = document.getElementById('dizi');
+const modDongu    = document.getElementById('modDongu');
+const modSarki    = document.getElementById('modSarki');
+const modIpucu    = document.getElementById('modIpucu');
+const bpmDegeri   = () => Number(bpm.value);
+
+/* ============================================================
+   BİLDİRİM — tarayıcının alert'i sayfayı kilitler, kendimiz yapıyoruz
+   ============================================================ */
+function bildir(mesaj, tur){
+  const b = document.createElement('div');
+  b.className = 'bildirim' + (tur === 'hata' ? ' hata' : '');
+  b.textContent = mesaj;
+  bildirimEl.appendChild(b);
+  setTimeout(() => { b.classList.add('cikiyor'); setTimeout(() => b.remove(), 260); }, 2600);
+  return b;
+}
+
+/* ============================================================
+   SES ÜRETİMİ
+   Bütün ses fonksiyonları hangi ses bağlamında (K) ve nereye (hedef)
+   çalacaklarını dışarıdan alıyor. Böylece aynı kod hem hoparlöre
+   canlı çalıyor hem de WAV üretirken sessizce dosyaya çalışıyor.
+   ============================================================ */
+let ctx = null, ana = null;
+
+function gurultuTamponu(K){
+  if (!K._gurultu){
+    const n = K.sampleRate;
+    const b = K.createBuffer(1, n, K.sampleRate);
+    const d = b.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    K._gurultu = b;
+  }
+  return K._gurultu;
+}
+
+function gurultu(K, hedef, t, sure, filtreTipi, frk, seviye){
+  const kaynak = K.createBufferSource();
+  kaynak.buffer = gurultuTamponu(K);
+  const filtre = K.createBiquadFilter();
+  filtre.type = filtreTipi; filtre.frequency.value = frk;
+  const g = K.createGain();
+  g.gain.setValueAtTime(seviye, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + sure);
+  kaynak.connect(filtre).connect(g).connect(hedef);
+  kaynak.start(t); kaynak.stop(t + sure);
+}
+
+function ton(K, hedef, t, tip, basFrek, sonFrek, sure, seviye){
+  const o = K.createOscillator();
+  const g = K.createGain();
+  o.type = tip;
+  o.frequency.setValueAtTime(basFrek, t);
+  if (sonFrek !== basFrek) o.frequency.exponentialRampToValueAtTime(sonFrek, t + sure);
+  g.gain.setValueAtTime(seviye, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + sure);
+  o.connect(g).connect(hedef);
+  o.start(t); o.stop(t + sure + 0.02);
+}
+
+/* bas: testere + bir oktav altında sinüs, ikisi de alçak geçiren
+   süzgeçten geçiyor. Süzgeç nota basılınca açılıp hemen kapanıyor —
+   "tuum" dedirten şey bu. */
+function basNotasi(K, hedef, t, frk, sure){
+  const testere = K.createOscillator(); testere.type = 'sawtooth'; testere.frequency.value = frk;
+  const alt     = K.createOscillator(); alt.type = 'sine';         alt.frequency.value = frk / 2;
+  const suzgec  = K.createBiquadFilter();
+  suzgec.type = 'lowpass'; suzgec.Q.value = 7;
+  suzgec.frequency.setValueAtTime(Math.min(frk * 9, 5000), t);
+  suzgec.frequency.exponentialRampToValueAtTime(Math.max(frk * 1.6, 90), t + sure * 0.8);
+  const g = K.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.55, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + sure);
+  testere.connect(suzgec); alt.connect(suzgec);
+  suzgec.connect(g).connect(hedef);
+  testere.start(t); alt.start(t);
+  testere.stop(t + sure + 0.03); alt.stop(t + sure + 0.03);
+}
+
+const SESLER = {
+  // 150 Hz'den 45 Hz'e düşen sinüs = bas davulun "bumm"u
+  kick:  (K,h,t) => ton(K,h,t,'sine',150,45,0.40,1.0),
+  // gürültü + altında kısa bir ton = trampet
+  snare: (K,h,t) => { gurultu(K,h,t,0.20,'highpass',1400,0.7); ton(K,h,t,'triangle',190,120,0.12,0.5); },
+  hihat: (K,h,t) => gurultu(K,h,t,0.045,'highpass',7500,0.34),
+  ahihat:(K,h,t) => gurultu(K,h,t,0.34,'highpass',7000,0.28),
+  // arka arkaya üç kısa gürültü = el çırpma hissi
+  clap:  (K,h,t) => [0,0.012,0.026].forEach(g => gurultu(K,h,t+g,0.11,'bandpass',1300,0.55)),
+  tom:   (K,h,t) => ton(K,h,t,'sine',230,90,0.32,0.75),
+  // iki uyumsuz kare dalga = kovboy zili
+  zil:   (K,h,t) => { ton(K,h,t,'square',540,540,0.28,0.20); ton(K,h,t,'square',800,800,0.28,0.20); },
+};
+
+function sesiKur(){
+  if (ctx) return;
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  ana = ctx.createGain();
+  ana.gain.value = ses.value / 100;
+  ana.connect(ctx.destination);
+}
+
+/* ============================================================
+   DURUM
+   ============================================================ */
+const bosBolum = () => ({
+  desen: ENSTRUMANLAR.map(() => new Array(ADIM_SAYISI).fill(false)),
+  basDesen: new Array(ADIM_SAYISI).fill(0)
+});
+
+let bolumler   = Array.from({length:BOLUM_SAYISI}, bosBolum);
+let aktifBolum = 0;
+let desen      = bolumler[0].desen;      // düzenlenen bölümün kısayolu
+let basDesen   = bolumler[0].basDesen;
+let dizilim    = [0, null, null, null, null, null, null, null];
+let sarkiModu  = false;
+let susturulan = ENSTRUMANLAR.map(() => false);
+let basSusturuldu = false;
+let kokMidi    = KOK_EN_ALT;
+let diziAdi    = 'minor';
+let secili     = null;    // {tur:'ritim'|'sarki'|'kayit', ...} | null
+let kayitlarim = [];
+
+const desenMetne     = d => d.map(s => s.map(v => v ? 'x' : '.').join(''));
+const metinDesene    = m => m.map(s => Array.from({length:ADIM_SAYISI}, (_, i) => s[i] === 'x'));
+const basMetne       = a => a.map(v => v ? String(v) : '.').join('');
+const basMetinDesene = s => Array.from({length:ADIM_SAYISI}, (_, i) => {
+  const n = parseInt((s || '')[i], 10);
+  return (n >= 1 && n <= BAS_DERECE) ? n : 0;
+});
+const bolumDolu = b => b.desen.some(s => s.some(Boolean)) || b.basDesen.some(Boolean);
+
+/* dizinin kaçıncı notası → kaç Hz */
+function derecininFrekansi(derece){
+  return frekans(kokMidi + DIZILER[diziAdi].araliklar[derece - 1]);
+}
+
+/* ---- tarayıcıya yazma / okuma ---- */
+function bolumuIsle(){ bolumler[aktifBolum] = { desen, basDesen }; }
+
+function kaydet(){
+  bolumuIsle();
+  try {
+    localStorage.setItem('ritim-kayit', JSON.stringify({
+      bolumler: bolumler.map(b => ({ satirlar:desenMetne(b.desen), bas:basMetne(b.basDesen) })),
+      dizilim, sarkiModu, aktifBolum, susturulan, basSusturuldu,
+      bpm:bpm.value, swing:swing.value, kokMidi, diziAdi, secili
+    }));
+  } catch(e){}
+}
+function kayitlariYaz(){
+  try { localStorage.setItem('ritim-kayitlarim', JSON.stringify(kayitlarim)); } catch(e){}
+}
+
+/* kaydedilmiş bir şarkı nesnesini ekrana kur */
+function sarkiyiKur(s){
+  bolumler = Array.from({length:BOLUM_SAYISI}, (_, i) => {
+    const b = s.bolumler?.[i];
+    return b ? { desen:metinDesene(b.satirlar), basDesen:basMetinDesene(b.bas) } : bosBolum();
+  });
+  dizilim = dizilimCoz(s.dizilim);
+  bpm.value = s.bpm; swing.value = s.swing;
+  if (Number.isInteger(s.kok)) kokMidi = s.kok;
+  if (DIZILER[s.dizi]) diziAdi = s.dizi;
+  bolumeGec(0, true);
+}
+const dizilimCoz = d => {
+  if (Array.isArray(d)) return d.slice(0, SLOT_SAYISI);
+  const s = String(d || 'A');
+  return Array.from({length:SLOT_SAYISI}, (_, i) => {
+    const k = BOLUM_ADLARI.indexOf(s[i]);
+    return k >= 0 ? k : null;
+  });
+};
+
+function yukle(){
+  try { kayitlarim = JSON.parse(localStorage.getItem('ritim-kayitlarim')) || []; } catch(e){ kayitlarim = []; }
+  if (!Array.isArray(kayitlarim)) kayitlarim = [];
+  kayitlariCiz();
+
+  let k = null;
+  try { k = JSON.parse(localStorage.getItem('ritim-kayit')); } catch(e){}
+
+  if (!k){ ritimYukle(0); return; }                 // ilk açılış → TEMEL
+
+  if (Array.isArray(k.bolumler)){
+    bolumler = Array.from({length:BOLUM_SAYISI}, (_, i) => {
+      const b = k.bolumler[i];
+      return (b && Array.isArray(b.satirlar) && b.satirlar.length === ENSTRUMANLAR.length)
+        ? { desen:metinDesene(b.satirlar), basDesen:basMetinDesene(b.bas) } : bosBolum();
+    });
+  } else if (Array.isArray(k.desen) && k.desen.length === ENSTRUMANLAR.length){
+    bolumler = Array.from({length:BOLUM_SAYISI}, bosBolum);   // eski tek desenli kayıt
+    bolumler[0] = { desen:k.desen, basDesen: Array.isArray(k.basDesen) ? k.basDesen : new Array(ADIM_SAYISI).fill(0) };
+  } else { ritimYukle(0); return; }
+
+  dizilim = dizilimCoz(k.dizilim);
+  sarkiModu = !!k.sarkiModu;
+  if (Array.isArray(k.susturulan) && k.susturulan.length === ENSTRUMANLAR.length) susturulan = k.susturulan;
+  basSusturuldu = !!k.basSusturuldu;
+  bpm.value = k.bpm; swing.value = k.swing;
+  if (Number.isInteger(k.kokMidi)) kokMidi = k.kokMidi;
+  if (DIZILER[k.diziAdi]) diziAdi = k.diziAdi;
+  secili = (k.secili && typeof k.secili === 'object') ? k.secili : null;
+  bolumeGec(Number.isInteger(k.aktifBolum) ? k.aktifBolum : 0, true);
+}
+
+/* ============================================================
+   ARAYÜZ KURULUMU
+   ============================================================ */
+const hucreler = [];
+const basHucreleri = [];
+const numaralar = [];
+const satirlarUI = [];
+const ritimButonlari = [];
+const sarkiButonlari = [];
+const slotlar = [];
+const bolumButonlari = [];
+
+/* adım numaraları — playhead bunların üstünde yürür */
+(function numaraSatiri(){
+  const satir = document.createElement('div');
+  satir.className = 'satir basliklar';
+  const bosluk = document.createElement('div');
+  bosluk.className = 'etiket';
+  satir.appendChild(bosluk);
+  for (let i = 0; i < ADIM_SAYISI; i++){
+    const n = document.createElement('div');
+    n.className = 'numara' + (i % 4 === 0 ? ' vurus' : '');
+    n.textContent = i % 4 === 0 ? (i / 4 + 1) : '·';
+    satir.appendChild(n);
+    numaralar.push(n);
+  }
+  izgara.appendChild(satir);
+})();
+
+/* davul satırları */
+ENSTRUMANLAR.forEach((ens, satirNo) => {
+  const satir = document.createElement('div');
+  satir.className = 'satir';
+
+  const etiket = document.createElement('div');
+  etiket.className = 'etiket';
+  etiket.title = 'tıkla → sustur / aç';
+
+  const sil = document.createElement('i');
+  sil.className = 'sil'; sil.textContent = '×'; sil.title = 'satırı temizle';
+  sil.onclick = e => { e.stopPropagation(); desen[satirNo].fill(false); elleDegisti(); };
+
+  const ad = document.createElement('span');
+  ad.textContent = ens.ad;
+
+  etiket.append(sil, ad);
+  etiket.onclick = () => {
+    susturulan[satirNo] = !susturulan[satirNo];
+    satir.classList.toggle('susturuldu', susturulan[satirNo]);
+    kaydet();
+  };
+  satir.appendChild(etiket);
+
+  const satirHucreleri = [];
+  for (let i = 0; i < ADIM_SAYISI; i++){
+    const h = document.createElement('div');
+    h.className = 'adim';
+    h.style.setProperty('--r', ens.renk);
+    h.onclick = () => {
+      desen[satirNo][i] = !desen[satirNo][i];
+      if (desen[satirNo][i] && ctx) SESLER[ens.anahtar](ctx, ana, ctx.currentTime); // dinleyerek seç
+      elleDegisti();
+    };
+    satir.appendChild(h);
+    satirHucreleri.push(h);
+  }
+  hucreler.push(satirHucreleri);
+  satirlarUI.push(satir);
+  izgara.appendChild(satir);
+});
+
+/* bas ızgarası — üstte oktav, altta kök (piyano rulosu gibi) */
+for (let derece = BAS_DERECE; derece >= 1; derece--){
+  const satir = document.createElement('div');
+  satir.className = 'satir';
+
+  const etiket = document.createElement('div');
+  etiket.className = 'basEtiket' + (derece === 1 || derece === BAS_DERECE ? ' kok' : '');
+  const no = document.createElement('span');
+  no.className = 'derece'; no.textContent = derece;
+  const nota = document.createElement('span');
+  nota.dataset.derece = derece;
+  etiket.append(no, nota);
+  satir.appendChild(etiket);
+
+  const satirHucreleri = [];
+  for (let i = 0; i < ADIM_SAYISI; i++){
+    const h = document.createElement('div');
+    h.className = 'adim';
+    h.style.setProperty('--r', 'var(--bas)');
+    h.onclick = () => {
+      basDesen[i] = (basDesen[i] === derece) ? 0 : derece;   // tek sesli: sütunda tek nota
+      if (basDesen[i] && ctx) basNotasi(ctx, ana, ctx.currentTime, derecininFrekansi(derece), 0.28);
+      elleDegisti();
+    };
+    satir.appendChild(h);
+    satirHucreleri.push(h);
+  }
+  basHucreleri.push(satirHucreleri);        // [0] = en üst satır = en yüksek derece
+  basIzgaraEl.appendChild(satir);
+}
+
+/* kök ve dizi seçicileri */
+for (let m = KOK_EN_ALT; m < KOK_EN_ALT + 12; m++){
+  const o = document.createElement('option');
+  o.value = m; o.textContent = notaAdi(m);
+  kokSec.appendChild(o);
+}
+Object.entries(DIZILER).forEach(([anahtar, d]) => {
+  const o = document.createElement('option');
+  o.value = anahtar; o.textContent = d.ad;
+  diziSec.appendChild(o);
+});
+
+/* hazır ritimler */
+let sira = 0;
+GRUPLAR.forEach(g => {
+  const satir = document.createElement('div');
+  satir.className = 'grup';
+  const ad = document.createElement('div');
+  ad.className = 'grupAd'; ad.textContent = g.grup;
+  satir.appendChild(ad);
+
+  g.ritimler.forEach(r => {
+    const no = sira++;
+    const b = document.createElement('button');
+    b.textContent = r.ad;
+    b.title = r.bpm + ' BPM' + (r.swing ? ' · swing %' + r.swing : '')
+            + (r.dizi ? ' · ' + DIZILER[r.dizi].ad : '');
+    b.onclick = () => ritimYukle(no);
+    satir.appendChild(b);
+    ritimButonlari.push(b);
+  });
+  ritimlerEl.appendChild(satir);
+});
+
+/* hazır şarkılar */
+SARKILAR.forEach((s, no) => {
+  const b = document.createElement('button');
+  b.textContent = s.ad;
+  b.title = `${s.bpm} BPM · ${DIZILER[s.dizi].ad} · dizilim ${s.dizilim}`;
+  b.onclick = () => sarkiYukle(no);
+  sarkilarEl.appendChild(b);
+  sarkiButonlari.push(b);
+});
+
+/* bölüm düğmeleri A B C D */
+BOLUM_ADLARI.forEach((ad, no) => {
+  const b = document.createElement('button');
+  b.className = 'bolumBtn';
+  b.style.setProperty('--h', `var(--${ad})`);
+  b.textContent = ad;
+  const nokta = document.createElement('span');
+  nokta.className = 'nokta';
+  b.appendChild(nokta);
+  b.onclick = () => bolumeGec(no);
+  bolumlerUI.appendChild(b);
+  bolumButonlari.push(b);
+});
+
+/* dizilim kutuları */
+for (let i = 0; i < SLOT_SAYISI; i++){
+  const b = document.createElement('button');
+  b.className = 'slot';
+  b.onclick = () => {
+    const su = dizilim[i];
+    dizilim[i] = (su === null) ? 0 : (su + 1 >= BOLUM_SAYISI ? null : su + 1);
+    dizilimiTazele(); kaydet();
+  };
+  dizilimUI.appendChild(b);
+  slotlar.push(b);
+}
+
+/* ============================================================
+   TAZELEME
+   ============================================================ */
+function ekraniTazele(){
+  desen.forEach((satir, s) =>
+    satir.forEach((acik, i) => hucreler[s][i].classList.toggle('acik', acik)));
+  satirlarUI.forEach((s, i) => s.classList.toggle('susturuldu', susturulan[i]));
+
+  basHucreleri.forEach((satir, r) => {
+    const derece = BAS_DERECE - r;
+    satir.forEach((h, i) => h.classList.toggle('acik', basDesen[i] === derece));
+  });
+  basIzgaraEl.classList.toggle('susturuldu', basSusturuldu);
+  document.getElementById('basSustur').classList.toggle('acik', basSusturuldu);
+
+  bolumButonlari.forEach((b, i) => {
+    b.classList.toggle('secili', i === aktifBolum);
+    b.classList.toggle('doluBolum', bolumDolu(i === aktifBolum ? { desen, basDesen } : bolumler[i]));
+  });
+}
+
+function dizilimiTazele(){
+  slotlar.forEach((b, i) => {
+    const v = dizilim[i];
+    b.textContent = v === null ? '·' : BOLUM_ADLARI[v];
+    b.classList.toggle('dolu', v !== null);
+    if (v !== null) b.style.setProperty('--h', `var(--${BOLUM_ADLARI[v]})`);
+  });
+  modDongu.classList.toggle('secili', !sarkiModu);
+  modSarki.classList.toggle('secili', sarkiModu);
+  modIpucu.textContent = sarkiModu
+    ? 'dizilimi baştan sona çalar'
+    : 'seçili bölüm döner durur';
+}
+
+function notaAdlariniTazele(){
+  basIzgaraEl.querySelectorAll('[data-derece]').forEach(el => {
+    const d = Number(el.dataset.derece);
+    el.textContent = notaAdi(kokMidi + DIZILER[diziAdi].araliklar[d - 1]);
+  });
+}
+
+function yazilariTazele(){
+  document.getElementById('bpmYazi').textContent   = bpm.value;
+  document.getElementById('swingYazi').textContent = swing.value + '%';
+  document.getElementById('sesYazi').textContent   = ses.value;
+  kokSec.value = kokMidi;
+  diziSec.value = diziAdi;
+  notaAdlariniTazele();
+
+  let ad = 'kendi ritmin';
+  if (secili?.tur === 'ritim') ad = TUM_RITIMLER[secili.no].ad;
+  else if (secili?.tur === 'sarki') ad = SARKILAR[secili.no].ad;
+  else if (secili?.tur === 'kayit') ad = secili.ad;
+  durumEl.innerHTML = `<b>${ad}</b> · ${bpm.value} BPM · `
+    + `${notaAdi(kokMidi).replace(/\d/,'')} ${DIZILER[diziAdi].ad} · Bölüm ${BOLUM_ADLARI[aktifBolum]}`;
+}
+
+function butonlariTazele(){
+  ritimButonlari.forEach((b, i) => b.classList.toggle('secili', secili?.tur === 'ritim' && secili.no === i));
+  sarkiButonlari.forEach((b, i) => b.classList.toggle('secili', secili?.tur === 'sarki' && secili.no === i));
+  [...kayitlarEl.children].forEach(c =>
+    c.classList.toggle('secili', secili?.tur === 'kayit' && secili.ad === c.dataset.ad));
+}
+function hepsiniTazele(){ yazilariTazele(); butonlariTazele(); dizilimiTazele(); ekraniTazele(); }
+
+function bolumeGec(no, sessiz){
+  if (!sessiz) bolumuIsle();
+  aktifBolum = no;
+  desen = bolumler[no].desen;
+  basDesen = bolumler[no].basDesen;
+  hepsiniTazele();
+  if (!sessiz) kaydet();
+}
+
+/* hazır ritim → seçili bölüme yüklenir */
+function ritimYukle(no){
+  const r = TUM_RITIMLER[no];
+  desen = metinDesene(r.satirlar);
+  basDesen = basMetinDesene(r.bas);
+  bolumler[aktifBolum] = { desen, basDesen };
+  bpm.value = r.bpm;
+  swing.value = r.swing;
+  if (r.dizi && DIZILER[r.dizi]) diziAdi = r.dizi;
+  secili = { tur:'ritim', no };
+  hepsiniTazele(); kaydet();
+}
+
+/* hazır şarkı → dört bölüm + dizilim birden gelir */
+function sarkiYukle(no){
+  sarkiyiKur(SARKILAR[no]);
+  sarkiModu = true;
+  secili = { tur:'sarki', no };
+  hepsiniTazele(); kaydet();
+  bildir(`"${SARKILAR[no].ad}" yüklendi — ÇAL'a bas`);
+}
+
+/* kullanıcı kutulara dokununca artık hazır bir şey sayılmaz */
+function elleDegisti(){
+  secili = null;
+  hepsiniTazele(); kaydet();
+}
+
+/* ============================================================
+   KENDİ ŞARKILARIN
+   ============================================================ */
+function kayitlariCiz(){
+  kayitlarEl.textContent = '';
+  kayitYokEl.style.display = kayitlarim.length ? 'none' : '';
+
+  kayitlarim.forEach(k => {
+    const c = document.createElement('span');
+    c.className = 'kayit';
+    c.dataset.ad = k.ad;
+
+    const ad = document.createElement('b');
+    ad.textContent = k.ad;
+    ad.title = k.bpm + ' BPM' + (DIZILER[k.dizi] ? ' · ' + DIZILER[k.dizi].ad : '')
+             + (k.dizilim ? ' · dizilim ' + (Array.isArray(k.dizilim)
+                 ? k.dizilim.map(v => v === null ? '-' : BOLUM_ADLARI[v]).join('') : k.dizilim) : '');
+    ad.onclick = () => kayitYukle(k.ad);
+
+    const sil = document.createElement('i');
+    sil.textContent = '×'; sil.title = 'sil';
+    sil.onclick = e => {
+      e.stopPropagation();
+      if (c.classList.contains('onay')){                 // ikinci tık → gerçekten sil
+        kayitlarim = kayitlarim.filter(x => x.ad !== k.ad);
+        if (secili?.tur === 'kayit' && secili.ad === k.ad) secili = null;
+        kayitlariYaz(); kayitlariCiz(); yazilariTazele(); kaydet();
+        bildir(`"${k.ad}" silindi`);
+      } else {
+        onaylariKapat();                                 // ilk tık → "emin misin"
+        c.classList.add('onay');
+        ad.dataset.eski = ad.textContent;
+        ad.textContent = 'SİLİNSİN Mİ?';
+      }
+    };
+
+    c.append(ad, sil);
+    kayitlarEl.appendChild(c);
+  });
+  butonlariTazele();
+}
+
+function onaylariKapat(){
+  [...kayitlarEl.children].forEach(c => {
+    if (c.classList.contains('onay')){
+      c.classList.remove('onay');
+      const b = c.querySelector('b');
+      if (b.dataset.eski) b.textContent = b.dataset.eski;
+    }
+  });
+}
+document.addEventListener('click', onaylariKapat);
+
+function kayitYukle(ad){
+  const k = kayitlarim.find(x => x.ad === ad);
+  if (!k) return;
+  sarkiyiKur(k);
+  sarkiModu = !!k.sarkiModu;
+  secili = { tur:'kayit', ad };
+  hepsiniTazele(); kaydet();
+}
+
+document.getElementById('kaydetBtn').onclick = kaydetmeyiCalistir;
+kayitAdiEl.addEventListener('keydown', e => { if (e.key === 'Enter') kaydetmeyiCalistir(); });
+
+function kaydetmeyiCalistir(){
+  const ad = kayitAdiEl.value.trim();
+  if (!ad){ bildir('Önce bir ad yaz', 'hata'); kayitAdiEl.focus(); return; }
+  bolumuIsle();
+  if (!bolumler.some(bolumDolu)){ bildir('Her yer boş — önce bir şeyler doldur', 'hata'); return; }
+
+  const yeni = {
+    ad, bpm:Number(bpm.value), swing:Number(swing.value), kok:kokMidi, dizi:diziAdi,
+    bolumler: bolumler.map(b => ({ satirlar:desenMetne(b.desen), bas:basMetne(b.basDesen) })),
+    dizilim: dizilim.slice(), sarkiModu
+  };
+  const varOlan = kayitlarim.findIndex(x => x.ad === ad);
+  if (varOlan >= 0){ kayitlarim[varOlan] = yeni; bildir(`"${ad}" güncellendi`); }
+  else { kayitlarim.push(yeni); bildir(`"${ad}" kaydedildi`); }
+
+  secili = { tur:'kayit', ad };
+  kayitAdiEl.value = '';
+  kayitlariYaz(); kayitlariCiz(); yazilariTazele(); kaydet();
+}
+
+/* ---- yedek al / yükle ---- */
+document.getElementById('yedekAl').onclick = () => {
+  if (!kayitlarim.length){ bildir('Yedeklenecek kayıt yok', 'hata'); return; }
+  const veri = JSON.stringify({ uygulama:'ritim', surum:3, kayitlar:kayitlarim }, null, 2);
+  dosyayaIndir(new Blob([veri], {type:'application/json'}), 'ritim-yedek.json');
+  bildir(`${kayitlarim.length} kayıt dosyaya yazıldı`);
+};
+
+const dosya = document.getElementById('dosya');
+document.getElementById('yedekYukle').onclick = () => dosya.click();
+dosya.onchange = () => {
+  const f = dosya.files[0];
+  if (!f) return;
+  const okuyucu = new FileReader();
+  okuyucu.onload = () => {
+    try {
+      const veri = JSON.parse(okuyucu.result);
+      const gelenler = Array.isArray(veri) ? veri : veri.kayitlar;
+      if (!Array.isArray(gelenler)) throw new Error('biçim');
+      let eklenen = 0, guncellenen = 0;
+      gelenler.forEach(k => {
+        if (!k || typeof k.ad !== 'string') return;
+        // eski sürüm tek desenliydi; onu A bölümüne koyuyoruz
+        const bols = Array.isArray(k.bolumler) ? k.bolumler
+                   : (Array.isArray(k.satirlar) ? [{ satirlar:k.satirlar, bas:k.bas }] : null);
+        if (!bols) return;
+        const temiz = {
+          ad: k.ad,
+          bpm: Number(k.bpm) || 96,
+          swing: Number(k.swing) || 0,
+          kok: Number.isInteger(k.kok) ? k.kok : KOK_EN_ALT,
+          dizi: DIZILER[k.dizi] ? k.dizi : 'minor',
+          bolumler: Array.from({length:BOLUM_SAYISI}, (_, i) => {
+            const b = bols[i];
+            if (!b || !Array.isArray(b.satirlar)) return { satirlar:Array(ENSTRUMANLAR.length).fill(BOS), bas:BOS };
+            return {
+              satirlar: Array.from({length:ENSTRUMANLAR.length}, (_, j) =>
+                String(b.satirlar[j] ?? BOS).padEnd(ADIM_SAYISI,'.').slice(0, ADIM_SAYISI)),
+              bas: String(b.bas || '').padEnd(ADIM_SAYISI,'.').slice(0, ADIM_SAYISI)
+            };
+          }),
+          dizilim: dizilimCoz(k.dizilim ?? 'A'),
+          sarkiModu: !!k.sarkiModu
+        };
+        const i = kayitlarim.findIndex(x => x.ad === k.ad);
+        if (i >= 0){ kayitlarim[i] = temiz; guncellenen++; } else { kayitlarim.push(temiz); eklenen++; }
+      });
+      if (!eklenen && !guncellenen) throw new Error('boş');
+      kayitlariYaz(); kayitlariCiz();
+      bildir(`${eklenen} yeni, ${guncellenen} güncellenen kayıt yüklendi`);
+    } catch(e){
+      bildir('Dosya okunamadı — bu bir ritim yedeği değil gibi', 'hata');
+    }
+    dosya.value = '';
+  };
+  okuyucu.readAsText(f);
+};
+
+/* dosya adında Türkçe harf bırakmıyoruz — telefonda/başka işletim
+   sisteminde bozuk görünmesin diye karşılıklarına çeviriyoruz */
+function ingilizceHarfe(metin){
+  const harita = { ç:'c', Ç:'c', ğ:'g', Ğ:'g', ı:'i', İ:'i', ö:'o', Ö:'o', ş:'s', Ş:'s', ü:'u', Ü:'u' };
+  return metin.replace(/[çÇğĞıİöÖşŞüÜ]/g, h => harita[h])
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-+|-+$/g, '') || 'ritim';
+}
+
+function dosyayaIndir(blob, ad){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = ad;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* ============================================================
+   ZAMANLAYICI
+   Notaları setInterval ile *çalmıyoruz* — setInterval hassas değil,
+   ritim tökezler. Onun yerine her 25 ms'de bir "önümüzdeki 100 ms
+   içinde ne çalacak" diye bakıp sesleri ses kartının kendi saatine
+   önceden randevu veriyoruz. Ritmin sıkı durmasının sebebi bu.
+   ============================================================ */
+const BAKIS = 25;        // ms — ne sıklıkla kontrol edilecek
+const PENCERE = 0.10;    // sn — ne kadar ileriye randevu verilecek
+
+let calisiyor = false, zamanlayici = null;
+let siradakiZaman = 0, siradakiAdim = 0, calanSlot = 0;
+let kuyruk = [];
+
+const doluSlotlar = () => dizilim.map((v, i) => v === null ? -1 : i).filter(i => i >= 0);
+
+function siradakiDoluSlot(su){
+  const dolu = doluSlotlar();
+  if (!dolu.length) return su;
+  const k = dolu.indexOf(su);
+  return dolu[(k + 1) % dolu.length];
+}
+
+/* o an çalınması gereken bölüm */
+function calanKaynak(){
+  if (!sarkiModu) return { desen, basDesen };
+  const b = dizilim[calanSlot];
+  return b === null ? { desen, basDesen } : bolumler[b];
+}
+
+function bir16lik(){
+  const s16 = 60.0 / bpmDegeri() / 4;
+  const sw = swing.value / 100;
+  // swing: çift adımlar biraz uzar, tek adımlar aynı miktarda kısalır
+  siradakiZaman += (siradakiAdim % 2 === 0) ? s16 * (1 + sw) : s16 * (1 - sw);
+  siradakiAdim = (siradakiAdim + 1) % ADIM_SAYISI;
+  if (siradakiAdim === 0 && sarkiModu) calanSlot = siradakiDoluSlot(calanSlot);
+}
+
+function randevuVer(adim, zaman){
+  const kaynak = calanKaynak();
+  const s16 = 60 / bpmDegeri() / 4;
+  ENSTRUMANLAR.forEach((ens, s) => {
+    if (kaynak.desen[s][adim] && !susturulan[s]) SESLER[ens.anahtar](ctx, ana, zaman);
+  });
+  if (kaynak.basDesen[adim] && !basSusturuldu)
+    basNotasi(ctx, ana, zaman, derecininFrekansi(kaynak.basDesen[adim]), Math.min(0.55, s16 * 1.7));
+  kuyruk.push({ adim, zaman, slot: sarkiModu ? calanSlot : -1 });
+}
+
+function tarayici(){
+  while (siradakiZaman < ctx.currentTime + PENCERE){
+    randevuVer(siradakiAdim, siradakiZaman);
+    bir16lik();
+  }
+}
+
+let gorunenAdim = -1, gorunenSlot = -1;
+function ciz(){
+  while (kuyruk.length && kuyruk[0].zaman <= ctx.currentTime){
+    const g = kuyruk.shift();
+    gorunenAdim = g.adim; gorunenSlot = g.slot;
+  }
+  if (gorunenAdim >= 0){
+    numaralar.forEach((n, i) => {
+      n.classList.toggle('on', i === gorunenAdim);
+      n.classList.toggle('iz', i === (gorunenAdim + ADIM_SAYISI - 1) % ADIM_SAYISI);
+    });
+    hucreler.forEach(satir => satir.forEach((h, i) => h.classList.toggle('simdi', i === gorunenAdim)));
+    basHucreleri.forEach(satir => satir.forEach((h, i) => h.classList.toggle('simdi', i === gorunenAdim)));
+    slotlar.forEach((b, i) => b.classList.toggle('caliyor', i === gorunenSlot));
+  }
+  if (calisiyor) requestAnimationFrame(ciz);
+}
+
+function baslat(){
+  sesiKur();
+  if (ctx.state === 'suspended') ctx.resume();
+  calisiyor = true;
+  siradakiAdim = 0;
+  calanSlot = doluSlotlar()[0] ?? 0;
+  siradakiZaman = ctx.currentTime + 0.05;
+  kuyruk = [];
+  zamanlayici = setInterval(tarayici, BAKIS);
+  requestAnimationFrame(ciz);
+  calBtn.textContent = '■ DUR';
+  calBtn.classList.add('calisiyor');
+}
+
+function durdur(){
+  calisiyor = false;
+  clearInterval(zamanlayici);
+  calBtn.textContent = '▶ ÇAL';
+  calBtn.classList.remove('calisiyor');
+  gorunenAdim = -1; gorunenSlot = -1;
+  numaralar.forEach(n => n.classList.remove('on','iz'));
+  hucreler.forEach(satir => satir.forEach(h => h.classList.remove('simdi')));
+  basHucreleri.forEach(satir => satir.forEach(h => h.classList.remove('simdi')));
+  slotlar.forEach(b => b.classList.remove('caliyor'));
+}
+
+/* ============================================================
+   WAV ÜRETİMİ
+   Aynı ses kodunu bu kez hoparlöre değil, OfflineAudioContext'e
+   çalıyoruz. O da gerçek zamanı beklemeden bütün sesi hesaplayıp
+   ham örnekler olarak veriyor; biz de başına WAV başlığı yazıp
+   dosya haline getiriyoruz.
+   ============================================================ */
+function wavYap(buf){
+  const kanal = buf.numberOfChannels, orneklem = buf.sampleRate;
+  const veriBoyu = buf.length * kanal * 2;
+  const ab = new ArrayBuffer(44 + veriBoyu);
+  const g = new DataView(ab);
+  const yaz = (o, s) => { for (let i = 0; i < s.length; i++) g.setUint8(o + i, s.charCodeAt(i)); };
+
+  yaz(0, 'RIFF');  g.setUint32(4, 36 + veriBoyu, true);  yaz(8, 'WAVE');
+  yaz(12, 'fmt '); g.setUint32(16, 16, true);            g.setUint16(20, 1, true);
+  g.setUint16(22, kanal, true);                          g.setUint32(24, orneklem, true);
+  g.setUint32(28, orneklem * kanal * 2, true);           g.setUint16(32, kanal * 2, true);
+  g.setUint16(34, 16, true);
+  yaz(36, 'data'); g.setUint32(40, veriBoyu, true);
+
+  const kanallar = [];
+  for (let k = 0; k < kanal; k++) kanallar.push(buf.getChannelData(k));
+  let o = 44;
+  for (let i = 0; i < buf.length; i++){
+    for (let k = 0; k < kanal; k++){
+      const v = Math.max(-1, Math.min(1, kanallar[k][i]));
+      g.setInt16(o, v < 0 ? v * 0x8000 : v * 0x7FFF, true);
+      o += 2;
+    }
+  }
+  return new Blob([ab], { type:'audio/wav' });
+}
+
+async function wavUret(){
+  bolumuIsle();
+  const dolu = doluSlotlar();
+  // şarkı modunda dizilimin tamamı, döngü modunda seçili bölüm 4 tur
+  const sira = sarkiModu && dolu.length ? dolu.map(i => bolumler[dizilim[i]])
+                                        : Array(4).fill({ desen, basDesen });
+  if (!sira.some(bolumDolu)) { bildir('Çalacak bir şey yok — önce ızgarayı doldur', 'hata'); return null; }
+
+  const s16 = 60 / bpmDegeri() / 4;
+  const sw = swing.value / 100;
+  const toplam = sira.length * ADIM_SAYISI * s16 + 1.6;   // son seslerin sönmesi için pay
+  const orneklem = 44100;
+  const K = new OfflineAudioContext(1, Math.ceil(toplam * orneklem), orneklem);
+  const cikis = K.createGain();
+  cikis.gain.value = ses.value / 100;
+  cikis.connect(K.destination);
+
+  let t = 0.05;
+  sira.forEach(bolum => {
+    for (let adim = 0; adim < ADIM_SAYISI; adim++){
+      ENSTRUMANLAR.forEach((ens, s) => {
+        if (bolum.desen[s][adim] && !susturulan[s]) SESLER[ens.anahtar](K, cikis, t);
+      });
+      if (bolum.basDesen[adim] && !basSusturuldu)
+        basNotasi(K, cikis, t, derecininFrekansi(bolum.basDesen[adim]), Math.min(0.55, s16 * 1.7));
+      t += (adim % 2 === 0) ? s16 * (1 + sw) : s16 * (1 - sw);
+    }
+  });
+
+  return wavYap(await K.startRendering());
+}
+
+wavBtn.onclick = async () => {
+  wavBtn.disabled = true;
+  const eskiYazi = wavBtn.textContent;
+  wavBtn.textContent = 'HAZIRLANIYOR…';
+  try {
+    const blob = await wavUret();
+    if (blob){
+      let ad = 'ritim';
+      if (secili?.tur === 'ritim') ad = TUM_RITIMLER[secili.no].ad;
+      else if (secili?.tur === 'sarki') ad = SARKILAR[secili.no].ad;
+      else if (secili?.tur === 'kayit') ad = secili.ad;
+      const dosyaAdi = ingilizceHarfe(ad) + '.wav';
+      dosyayaIndir(blob, dosyaAdi);
+      bildir(`${dosyaAdi} indirildi (${(blob.size / 1024 / 1024).toFixed(1)} MB)`);
+    }
+  } catch(e){
+    bildir('Ses dosyası üretilemedi', 'hata');
+  }
+  wavBtn.textContent = eskiYazi;
+  wavBtn.disabled = false;
+};
+
+/* ============================================================
+   KONTROLLER
+   ============================================================ */
+calBtn.onclick = () => calisiyor ? durdur() : baslat();
+
+modDongu.onclick = () => { sarkiModu = false; dizilimiTazele(); kaydet(); };
+modSarki.onclick = () => {
+  sarkiModu = true; dizilimiTazele(); kaydet();
+  if (calisiyor) calanSlot = doluSlotlar()[0] ?? 0;
+};
+
+bpm.oninput   = () => { secili = null; yazilariTazele(); butonlariTazele(); kaydet(); };
+swing.oninput = () => { secili = null; yazilariTazele(); butonlariTazele(); kaydet(); };
+ses.oninput   = () => {
+  document.getElementById('sesYazi').textContent = ses.value;
+  if (ana) ana.gain.value = ses.value / 100;
+};
+
+kokSec.onchange  = () => { kokMidi = Number(kokSec.value); yazilariTazele(); kaydet(); };
+diziSec.onchange = () => { diziAdi = diziSec.value; yazilariTazele(); kaydet(); };
+
+document.getElementById('basSustur').onclick = () => { basSusturuldu = !basSusturuldu; ekraniTazele(); kaydet(); };
+document.getElementById('basTemizle').onclick = () => { basDesen.fill(0); elleDegisti(); };
+
+document.getElementById('temizle').onclick = () => {
+  desen = ENSTRUMANLAR.map(() => new Array(ADIM_SAYISI).fill(false));
+  basDesen = new Array(ADIM_SAYISI).fill(0);
+  bolumler[aktifBolum] = { desen, basDesen };
+  elleDegisti();
+};
+
+document.addEventListener('keydown', e => {
+  const yaziAlani = e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT';
+  if (e.code === 'Space' && !yaziAlani){ e.preventDefault(); calisiyor ? durdur() : baslat(); }
+  // 1-4 tuşları bölümler arasında gezdirir
+  if (!yaziAlani && ['Digit1','Digit2','Digit3','Digit4'].includes(e.code)){
+    bolumeGec(Number(e.code.slice(-1)) - 1);
+  }
+});
+
+yukle();
+</script>
+</body>
+</html>
