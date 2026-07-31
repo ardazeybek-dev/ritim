@@ -1,62 +1,73 @@
-# RİTİM — Tarayıcı Ritim Makinesi
+# RİTİM — Browser Drum Machine
 
-Tarayıcıda çalışan bir ritim makinesi ve step sequencer. Kurulum yok, hesap yok, dış bağımlılık yok — **tek bir HTML dosyası**. Bütün sesler kodun içinde sentezleniyor; projede tek bir ses dosyası bile yok.
+A drum machine and step sequencer that runs entirely in the browser. No installation, no account, no dependencies — **a single HTML file**. Every sound is synthesised in code; the project does not ship a single audio file.
 
-**▶ [Canlı olarak dene](https://ardazeybek-dev.github.io/ritim/)**
+**▶ [Try it live](https://ardazeybek-dev.github.io/ritim/)**
 
-![RİTİM ekran görüntüsü](docs/ekran.png)
+![RİTİM screenshot](docs/ekran.png)
 
-## Ne yapıyor
+> The interface is in Turkish. `ÇAL` = play, `TEMİZLE` = clear, `KAYDET` = save, `WAV İNDİR` = download WAV, `BÖLÜM` = section, `DİZİLİM` = arrangement.
 
-Kutulara basarak ritim kuruyorsun, `ÇAL` diyorsun, çalıyor. Beğendiğin şeyi WAV olarak indirip istediğin yerde kullanabiliyorsun.
+## What it does
 
-- **7 davul kanalı** — bas davul, trampet, hi-hat, açık hi-hat, alkış, tom, zil
-- **16 adımlık grid**, her kanal ayrı ayrı susturulabilir ve temizlenebilir
-- **Bas hattı** — 8 dereceli piyano rulosu; kök nota (A1–G#2) ve dizi seçilebiliyor:
-  Minör, Majör, Pentatonik, Blues, **Hicaz**, Frigyen
-- **22 hazır ritim** — Temel, Rock, Pop, Marş, Shuffle · Disko, House, Techno, Dubstep, Drum & Bass · Boom Bap, Trap, Drill, Lo-fi · Funk, Afrobeat, Reggaeton, Samba, Bossa · **Kara Şimşek, Halay, Çiftetelli**
-- **Şarkı modu** — A/B/C/D olmak üzere dört bölüm kurup 8 slotluk bir dizilime sıralıyorsun, baştan sona çalıyor
-- **3 hazır şarkı** — Gece, Çarşı, Otoban
-- **Tempo, swing ve ses** ayarı; swing ile ritim düz olmaktan çıkıp yürümeye başlıyor
-- **Kaydetme** — kendi şarkılarını tarayıcıda saklıyor, dosya olarak yedek alıp geri yükleyebiliyorsun
-- **WAV indirme** — çalanı ses dosyası olarak dışa aktarıyor
-- Masaüstü ve mobilde çalışır; boşluk tuşu çal/durdur
+You click cells to build a pattern, hit play, and it plays. When you like what you hear, you export it as a WAV file and use it anywhere.
 
-## Nasıl çalışıyor
+- **7 drum channels** — kick, snare, hi-hat, open hi-hat, clap, tom, cymbal. Each one can be muted or cleared on its own.
+- **16-step grid** per section
+- **Bass line** — an 8-degree piano roll. Pick a root note (A1–G#2) and a scale: minor, major, pentatonic, blues, **Hicaz** (a Turkish makam) or Phrygian.
+- **22 built-in patterns** — Basic, Rock, Pop, March, Shuffle · Disco, House, Techno, Dubstep, Drum & Bass · Boom Bap, Trap, Drill, Lo-fi · Funk, Afrobeat, Reggaeton, Samba, Bossa · **Knight Rider, Halay, Çiftetelli**
+- **Song mode** — build four sections (A/B/C/D), arrange them into an 8-slot sequence, and the whole thing plays start to finish
+- **3 demo songs** to start from
+- **Tempo, swing and volume** — swing is what turns a stiff grid into something that walks
+- **Saving** — songs are kept in the browser, and you can export a backup file and load it back
+- **WAV export** — download whatever is playing as an audio file
+- Works on desktop and mobile; spacebar toggles playback
 
-Projenin ilginç kısmı burası:
+## How it works
 
-**Sesler sıfırdan üretiliyor.** Bas davul, alçalan frekanslı bir sinüs; trampet ve hi-hat, filtreden geçirilmiş beyaz gürültü. Hepsi `AudioContext` üzerinde osilatör, gürültü tamponu ve `BiquadFilter` ile kuruluyor — hazır örnek (sample) kullanılmıyor. Bu yüzden proje 60 KB'lık tek dosyaya sığıyor.
+This is the part worth reading.
 
-**Zamanlama `setTimeout` ile yapılmıyor.** Tarayıcının zamanlayıcıları ritim için yeterince hassas değildir; sekme arka plana alındığında ritim aksar. Bunun yerine ses saatinin (`audioContext.currentTime`) ilerisine bakılıp notalar önceden planlanıyor, `setTimeout` yalnızca "bir sonraki notaları planla" turunu tetiklemek için kullanılıyor. Web Audio'da doğru yaklaşım budur.
+**The sounds are synthesised from scratch.** The kick is a sine wave with a falling pitch envelope; the snare and hi-hats are white noise pushed through a `BiquadFilter`. Everything is built at runtime on an `AudioContext` — there are no samples anywhere. That is why the whole thing fits into a single 60 KB file that loads instantly.
 
-**WAV dışa aktarma `OfflineAudioContext` ile.** Şarkı, gerçek zamanlı çalmak yerine bellekte olabildiğince hızlı render ediliyor, çıkan ses tamponu WAV başlığıyla birlikte dosyaya yazılıyor. Yani 2 dakikalık bir parçayı indirmek için 2 dakika beklemiyorsun.
+**Timing is not driven by `setTimeout`.** Browser timers drift and stall — a sequencer built on them stutters, and falls apart completely when the tab goes to the background. Instead, the scheduler looks a short window ahead of the audio clock (`audioContext.currentTime`) and books notes in advance; `setTimeout` only wakes the scheduler up to plan the next window. The audio clock, not the JavaScript event loop, decides when a note fires.
 
-## Çalıştırma
+**Bass notes are stored as scale degrees, not frequencies.** A cell holds "degree 5", not "440 Hz". So when you change the root note or switch from minor to Hicaz, the entire bass line transposes itself and stays in key — whichever cells you clicked.
+
+**WAV export runs through `OfflineAudioContext`.** Instead of recording the song in real time, it is rendered into memory as fast as the machine allows, and the resulting buffer is written out with a WAV header. Exporting a two-minute track does not take two minutes.
+
+**No browser dialogs.** No `alert`, `confirm` or `prompt` anywhere — they freeze the page and look out of place. Deleting a saved song takes two deliberate clicks instead.
+
+## Running it
 
 ```bash
 git clone https://github.com/ardazeybek-dev/ritim.git
 cd ritim
 ```
 
-`index.html` dosyasını tarayıcıda aç. Sunucu, derleme adımı, paket kurulumu yok.
+Open `index.html` in a browser. No server, no build step, no package install.
 
-> Tarayıcılar ses çalmadan önce kullanıcı etkileşimi bekler; ilk sesi duymak için sayfada bir yere tıklaman (ya da `ÇAL`'a basman) gerekir. Bu bir hata değil, tarayıcı kuralı.
+> Browsers block audio until the user interacts with the page, so the first sound arrives after your first click. That is a browser rule, not a bug.
 
-## Teknik
+## Tech
 
 | | |
 |---|---|
-| Diller | HTML, CSS, JavaScript — tek dosya, sıfır bağımlılık |
-| Ses | Web Audio API (`AudioContext`, osilatör + gürültü sentezi, `BiquadFilter`) |
-| Dışa aktarma | `OfflineAudioContext` ile hızlandırılmış render + WAV kodlama |
-| Kalıcılık | `localStorage` + JSON yedek dosyası |
-| Boyut | ~60 KB, ~1.400 satır |
+| Stack | HTML, CSS, JavaScript — one file, zero dependencies |
+| Audio | Web Audio API (`AudioContext`, oscillator + noise synthesis, `BiquadFilter`) |
+| Export | Faster-than-realtime render via `OfflineAudioContext`, encoded to WAV |
+| Persistence | `localStorage` plus a JSON backup file |
+| Size | ~60 KB, ~1,400 lines |
 
-## Lisans
+## Adding your own pattern
 
-MIT — bkz. [LICENSE](LICENSE).
+Patterns live in the `GRUPLAR` object. Each one looks like this:
 
----
+```js
+{ ad: "Pattern name", bpm: 96, swing: 0, satirlar: { ... }, bas: [ ... ] }
+```
 
-*A browser-based drum machine and step sequencer with a bass line, written as a single dependency-free HTML file. All sounds are synthesised in code (no samples), scheduling is done against the Web Audio clock, and songs can be exported to WAV via `OfflineAudioContext`. Includes 22 built-in patterns — among them Turkish rhythms such as Halay and Çiftetelli — and a Hicaz scale option for the bass line.*
+Every row string must be exactly 16 characters long — one per step. If it is not, the console tells you which pattern is wrong. A pattern that does not declare a scale simply plays in whatever scale the user currently has selected, which is intentional.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
