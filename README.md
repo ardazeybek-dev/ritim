@@ -4,9 +4,7 @@ A drum machine and step sequencer that runs entirely in the browser. No installa
 
 **▶ [Try it live](https://ardazeybek-dev.github.io/ritim/)**
 
-![RİTİM screenshot](docs/ekran.png)
-
-> The interface is in Turkish. `ÇAL` = play, `TEMİZLE` = clear, `KAYDET` = save, `WAV İNDİR` = download WAV, `BÖLÜM` = section, `DİZİLİM` = arrangement.
+![RİTİM screenshot](docs/screenshot.png)
 
 ## What it does
 
@@ -15,7 +13,7 @@ You click cells to build a pattern, hit play, and it plays. When you like what y
 - **7 drum channels** — kick, snare, hi-hat, open hi-hat, clap, tom, cymbal. Each one can be muted or cleared on its own.
 - **16-step grid** per section
 - **Bass line** — an 8-degree piano roll. Pick a root note (A1–G#2) and a scale: minor, major, pentatonic, blues, **Hicaz** (a Turkish makam) or Phrygian.
-- **22 built-in patterns** — Basic, Rock, Pop, March, Shuffle · Disco, House, Techno, Dubstep, Drum & Bass · Boom Bap, Trap, Drill, Lo-fi · Funk, Afrobeat, Reggaeton, Samba, Bossa · **Knight Rider, Halay, Çiftetelli**
+- **22 built-in patterns** — Basic, Rock, Pop, March, Shuffle · Disco, House, Techno, Dubstep, Drum & Bass · Boom Bap, Trap, Drill, Lo-fi · Funk, Afrobeat, Reggaeton, Samba, Bossa · **Knight Rider, Halay, Çiftetelli** (the last two are Turkish folk rhythms and keep their names)
 - **Song mode** — build four sections (A/B/C/D), arrange them into an 8-slot sequence, and the whole thing plays start to finish
 - **3 demo songs** to start from
 - **Tempo, swing and volume** — swing is what turns a stiff grid into something that walks
@@ -60,10 +58,10 @@ Open `index.html` in a browser. No server, no build step, no package install.
 
 ## Adding your own pattern
 
-Patterns live in the `GRUPLAR` object. Each one looks like this:
+Patterns live in the `PATTERN_GROUPS` object. Each one looks like this:
 
 ```js
-{ ad: "Pattern name", bpm: 96, swing: 0, satirlar: { ... }, bas: [ ... ] }
+{ name: "Pattern name", bpm: 96, swing: 0, rows: [ ... ], bass: "1...5..." }
 ```
 
 Every row string must be exactly 16 characters long — one per step. If it is not, the console tells you which pattern is wrong. A pattern that does not declare a scale simply plays in whatever scale the user currently has selected, which is intentional.

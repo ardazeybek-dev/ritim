@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RİTİM — Tarayıcı Ritim Makinesi</title>
+<title>RİTİM — Browser Drum Machine</title>
 <style>
   :root{
     --bg:#0a0a0c;
@@ -12,13 +12,13 @@
     --line:#2a2a34;
     --text:#e8e8ee;
     --dim:#7b7b8a;
-    --sonuk:#55555f;
+    --faint:#55555f;
     --amber:#ffb000;
-    --kirmizi:#ff5a5a;
-    --bas:#4da6ff;
+    --red:#ff5a5a;
+    --bass:#4da6ff;
     --A:#ffb000; --B:#3ddbd9; --C:#8f7dff; --D:#ff6fd8;
-    --etiketEni:126px;
-    --hucreEni:38px;
+    --labelWidth:126px;
+    --cellWidth:38px;
   }
   *{box-sizing:border-box}
   body{
@@ -26,26 +26,26 @@
     font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
     padding:24px 16px 60px; -webkit-font-smoothing:antialiased;
   }
-  .kasa{max-width:1020px;margin:0 auto}
+  .shell{max-width:1020px;margin:0 auto}
 
-  /* ---- üst bar ---- */
+  /* ---- top bar ---- */
   header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
   h1{
     margin:0;font-size:30px;letter-spacing:.5em;font-weight:700;
     color:var(--amber); text-shadow:0 0 22px rgba(255,176,0,.45);
   }
-  #durum{
+  #status{
     font-size:12px;color:var(--dim);letter-spacing:.08em;
     border:1px solid var(--line);border-radius:20px;padding:7px 15px;background:var(--panel);
   }
-  #durum b{color:var(--text);font-weight:400}
+  #status b{color:var(--text);font-weight:400}
 
-  /* ---- paneller ---- */
+  /* ---- panels ---- */
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:12px}
-  .panelBaslik{font-size:10px;letter-spacing:.18em;color:var(--sonuk);padding:11px 16px 0}
+  .panelTitle{font-size:10px;letter-spacing:.18em;color:var(--faint);padding:11px 16px 0}
 
-  /* ---- kontrol / transport ---- */
-  .kontrol{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:14px 16px}
+  /* ---- transport ---- */
+  .transport{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:14px 16px}
   button{
     font:inherit;color:var(--text);background:var(--panel-2);
     border:1px solid var(--line);border-radius:7px;padding:9px 15px;
@@ -53,17 +53,17 @@
   }
   button:hover{border-color:#4a4a5a;background:#24242d}
   button:disabled{opacity:.45;cursor:default}
-  #calBtn{min-width:118px;font-weight:700;border-color:#3a5a3a;color:#8fe38f}
-  #calBtn.calisiyor{background:#3a1414;border-color:#7a2a2a;color:#ff8a8a}
-  .kaydir{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--dim)}
-  .kaydir{gap:7px}
-  .kaydir b{color:var(--text);min-width:36px;text-align:right;font-variant-numeric:tabular-nums}
+  #playBtn{min-width:118px;font-weight:700;border-color:#3a5a3a;color:#8fe38f}
+  #playBtn.playing{background:#3a1414;border-color:#7a2a2a;color:#ff8a8a}
+  .slider{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--dim)}
+  .slider{gap:7px}
+  .slider b{color:var(--text);min-width:36px;text-align:right;font-variant-numeric:tabular-nums}
   input[type=range]{width:92px;accent-color:var(--amber)}
-  .ayirac{width:1px;height:26px;background:var(--line)}
-  .ince{padding:7px 12px;font-size:11px;color:var(--dim)}
-  .ince:hover{color:var(--text)}
-  .ince.acik{color:var(--kirmizi);border-color:#7a2a2a}
-  #wavBtn{border-color:#2f4a5e;color:var(--bas)}
+  .divider{width:1px;height:26px;background:var(--line)}
+  .thin{padding:7px 12px;font-size:11px;color:var(--dim)}
+  .thin:hover{color:var(--text)}
+  .thin.active{color:var(--red);border-color:#7a2a2a}
+  #wavBtn{border-color:#2f4a5e;color:var(--bass)}
 
   select{
     font:inherit;font-size:11px;color:var(--text);background:var(--panel-2);
@@ -72,145 +72,145 @@
   }
   select:focus{outline:none;border-color:var(--amber)}
 
-  /* ---- satırlar (hazır ritim / şarkı / kayıt) ---- */
-  .gruplar{padding:12px 16px 14px}
-  .grup{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:7px}
-  .grup:last-child{margin-bottom:0}
-  .grupAd{
-    width:var(--etiketEni);min-width:var(--etiketEni);text-align:right;padding-right:12px;
-    font-size:11px;color:var(--sonuk);letter-spacing:.06em;
+  /* ---- rows (presets / songs / saved) ---- */
+  .groups{padding:12px 16px 14px}
+  .group{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:7px}
+  .group:last-child{margin-bottom:0}
+  .groupName{
+    width:var(--labelWidth);min-width:var(--labelWidth);text-align:right;padding-right:12px;
+    font-size:11px;color:var(--faint);letter-spacing:.06em;
   }
-  .grup button{padding:6px 11px;font-size:11px;color:var(--dim)}
-  .grup button:hover{color:var(--text)}
-  .grup button.secili{
+  .group button{padding:6px 11px;font-size:11px;color:var(--dim)}
+  .group button:hover{color:var(--text)}
+  .group button.selected{
     background:var(--amber);border-color:var(--amber);color:#0a0a0c;font-weight:700;
     box-shadow:0 0 16px -3px var(--amber);
   }
-  .ipucu{font-size:10px;color:#45454f;letter-spacing:.05em;font-style:italic}
+  .hint{font-size:10px;color:#45454f;letter-spacing:.05em;font-style:italic}
 
-  /* ---- şarkı: mod, dizilim ---- */
-  .mod button.secili{background:var(--amber);border-color:var(--amber);color:#0a0a0c;font-weight:700}
+  /* ---- song: mode, arrangement ---- */
+  .mode button.selected{background:var(--amber);border-color:var(--amber);color:#0a0a0c;font-weight:700}
   .slot{
     width:42px;min-width:42px;height:38px;padding:0;font-size:13px;font-weight:700;
-    display:flex;align-items:center;justify-content:center;color:var(--sonuk);
+    display:flex;align-items:center;justify-content:center;color:var(--faint);
   }
-  .slot.dolu{color:#0a0a0c;border-color:var(--h);background:var(--h)}
-  .slot.caliyor{outline:2px solid #fff;outline-offset:2px}
-  .slot.dolu:hover{background:var(--h);border-color:#fff}
+  .slot.filled{color:#0a0a0c;border-color:var(--h);background:var(--h)}
+  .slot.playing{outline:2px solid #fff;outline-offset:2px}
+  .slot.filled:hover{background:var(--h);border-color:#fff}
 
-  /* ---- bölüm seçici ---- */
-  .bolumSerit{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:13px 16px 0}
-  .bolumSerit .basAd{
-    width:var(--etiketEni);min-width:var(--etiketEni);text-align:right;padding-right:12px;
-    font-size:11px;letter-spacing:.14em;color:var(--sonuk);
+  /* ---- section picker ---- */
+  .sectionBar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:13px 16px 0}
+  .sectionBar .laneLabel{
+    width:var(--labelWidth);min-width:var(--labelWidth);text-align:right;padding-right:12px;
+    font-size:11px;letter-spacing:.14em;color:var(--faint);
   }
-  .bolumBtn{
-    width:42px;min-width:42px;padding:7px 0;font-size:12px;font-weight:700;color:var(--sonuk);
+  .sectionBtn{
+    width:42px;min-width:42px;padding:7px 0;font-size:12px;font-weight:700;color:var(--faint);
     position:relative;
   }
-  .bolumBtn.secili{background:var(--h);border-color:var(--h);color:#0a0a0c}
-  .bolumBtn .nokta{
+  .sectionBtn.selected{background:var(--h);border-color:var(--h);color:#0a0a0c}
+  .sectionBtn .dot{
     position:absolute;top:4px;right:5px;width:5px;height:5px;border-radius:50%;
     background:var(--h);opacity:0;
   }
-  .bolumBtn.doluBolum .nokta{opacity:.85}
-  .bolumBtn.secili .nokta{background:#0a0a0c;opacity:.5}
+  .sectionBtn.hasContent .dot{opacity:.85}
+  .sectionBtn.selected .dot{background:#0a0a0c;opacity:.5}
 
-  /* ---- kayıtlarım ---- */
-  .kayit{
+  /* ---- my songs ---- */
+  .saved{
     display:inline-flex;align-items:center;gap:2px;
     border:1px solid var(--line);border-radius:7px;background:var(--panel-2);
     overflow:hidden;transition:.12s;
   }
-  .kayit b{font-weight:400;font-size:11px;color:var(--dim);padding:6px 4px 6px 11px;cursor:pointer;letter-spacing:.06em}
-  .kayit:hover{border-color:#4a4a5a}
-  .kayit:hover b{color:var(--text)}
-  .kayit.secili{background:var(--amber);border-color:var(--amber)}
-  .kayit.secili b{color:#0a0a0c;font-weight:700}
-  .kayit i{font-style:normal;font-size:13px;line-height:1;color:var(--sonuk);padding:6px 9px 7px;cursor:pointer}
-  .kayit i:hover{color:var(--kirmizi)}
-  .kayit.secili i{color:rgba(10,10,12,.45)}
-  .kayit.onay{border-color:var(--kirmizi);background:#2a1414}
-  .kayit.onay b,.kayit.onay i{color:var(--kirmizi)}
-  .bos{font-size:11px;color:var(--sonuk);font-style:italic}
+  .saved b{font-weight:400;font-size:11px;color:var(--dim);padding:6px 4px 6px 11px;cursor:pointer;letter-spacing:.06em}
+  .saved:hover{border-color:#4a4a5a}
+  .saved:hover b{color:var(--text)}
+  .saved.selected{background:var(--amber);border-color:var(--amber)}
+  .saved.selected b{color:#0a0a0c;font-weight:700}
+  .saved i{font-style:normal;font-size:13px;line-height:1;color:var(--faint);padding:6px 9px 7px;cursor:pointer}
+  .saved i:hover{color:var(--red)}
+  .saved.selected i{color:rgba(10,10,12,.45)}
+  .saved.confirm{border-color:var(--red);background:#2a1414}
+  .saved.confirm b,.saved.confirm i{color:var(--red)}
+  .empty{font-size:11px;color:var(--faint);font-style:italic}
   input[type=text]{
     font:inherit;font-size:11px;color:var(--text);background:var(--panel-2);
     border:1px solid var(--line);border-radius:7px;padding:7px 11px;width:190px;letter-spacing:.06em;
   }
   input[type=text]:focus{outline:none;border-color:var(--amber)}
-  input[type=text]::placeholder{color:var(--sonuk)}
+  input[type=text]::placeholder{color:var(--faint)}
 
-  /* ---- ızgara ---- */
-  .izgara{padding:12px 16px 14px;overflow-x:auto}
-  .satir{display:flex;align-items:center;gap:3px;margin-bottom:5px}
-  .satir:last-child{margin-bottom:0}
-  .satir.susturuldu .adim{opacity:.28}
+  /* ---- grid ---- */
+  .grid{padding:12px 16px 14px;overflow-x:auto}
+  .row{display:flex;align-items:center;gap:3px;margin-bottom:5px}
+  .row:last-child{margin-bottom:0}
+  .row.muted .step{opacity:.28}
 
-  .etiket{
-    width:var(--etiketEni);min-width:var(--etiketEni);
+  .label{
+    width:var(--labelWidth);min-width:var(--labelWidth);
     display:flex;align-items:center;justify-content:flex-end;gap:7px;
     padding-right:12px;font-size:11px;letter-spacing:.06em;
     color:var(--dim);cursor:pointer;user-select:none;
   }
-  .etiket:hover{color:var(--text)}
-  .etiket .sil{font-style:normal;font-size:13px;line-height:1;color:var(--sonuk);opacity:0;transition:.12s;padding:0 2px}
-  .etiket:hover .sil{opacity:1}
-  .etiket .sil:hover{color:var(--kirmizi)}
-  .satir.susturuldu .etiket span{opacity:.4;text-decoration:line-through}
+  .label:hover{color:var(--text)}
+  .label .clear{font-style:normal;font-size:13px;line-height:1;color:var(--faint);opacity:0;transition:.12s;padding:0 2px}
+  .label:hover .clear{opacity:1}
+  .label .clear:hover{color:var(--red)}
+  .row.muted .label span{opacity:.4;text-decoration:line-through}
 
-  .basliklar{margin-bottom:8px}
-  .numara{
-    width:var(--hucreEni);min-width:var(--hucreEni);height:20px;
+  .headers{margin-bottom:8px}
+  .num{
+    width:var(--cellWidth);min-width:var(--cellWidth);height:20px;
     display:flex;align-items:center;justify-content:center;
-    font-size:10px;color:var(--sonuk);border-radius:4px;
+    font-size:10px;color:var(--faint);border-radius:4px;
     background:#17171d;transition:background .05s,color .05s;
   }
-  .numara.vurus{color:var(--dim)}
-  .numara.on{background:var(--amber);color:#0a0a0c;font-weight:700;box-shadow:0 0 14px -2px var(--amber)}
-  .numara.iz{background:rgba(255,176,0,.2)}
+  .num.beat{color:var(--dim)}
+  .num.on{background:var(--amber);color:#0a0a0c;font-weight:700;box-shadow:0 0 14px -2px var(--amber)}
+  .num.trail{background:rgba(255,176,0,.2)}
 
-  .adim{
-    width:var(--hucreEni);height:34px;min-width:var(--hucreEni);border-radius:5px;
+  .step{
+    width:var(--cellWidth);height:34px;min-width:var(--cellWidth);border-radius:5px;
     background:#1a1a21;border:1px solid #26262f;cursor:pointer;
     transition:transform .05s, background .08s, opacity .12s;
   }
-  .adim:nth-child(4n+2){background:#20202a}   /* her 4'lük vuruşun başı koyu */
-  .adim:hover{border-color:#4a4a5a}
-  .adim.acik{background:var(--r);border-color:var(--r);box-shadow:0 0 12px -2px var(--r)}
-  .adim.simdi{transform:scaleY(1.14)}
-  .adim.simdi:not(.acik){background:#33333f}
+  .step:nth-child(4n+2){background:#20202a}   /* the downbeat of every group of 4 is darker */
+  .step:hover{border-color:#4a4a5a}
+  .step.active{background:var(--r);border-color:var(--r);box-shadow:0 0 12px -2px var(--r)}
+  .step.now{transform:scaleY(1.14)}
+  .step.now:not(.active){background:#33333f}
 
-  /* ---- bas bölümü ---- */
-  .basSerit{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid var(--line);padding:12px 16px 0}
-  .basSerit .basAd{
-    width:var(--etiketEni);min-width:var(--etiketEni);text-align:right;padding-right:12px;
-    font-size:11px;letter-spacing:.14em;color:var(--bas);
+  /* ---- bass section ---- */
+  .bassBar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid var(--line);padding:12px 16px 0}
+  .bassBar .laneLabel{
+    width:var(--labelWidth);min-width:var(--labelWidth);text-align:right;padding-right:12px;
+    font-size:11px;letter-spacing:.14em;color:var(--bass);
   }
-  .basSerit label{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--sonuk);letter-spacing:.1em}
-  .basIzgara{padding:10px 16px 14px;overflow-x:auto}
-  .basIzgara .satir{margin-bottom:3px}
-  .basIzgara.susturuldu .adim{opacity:.28}
-  .basEtiket{
-    width:var(--etiketEni);min-width:var(--etiketEni);
+  .bassBar label{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--faint);letter-spacing:.1em}
+  .bassGrid{padding:10px 16px 14px;overflow-x:auto}
+  .bassGrid .row{margin-bottom:3px}
+  .bassGrid.muted .step{opacity:.28}
+  .bassLabel{
+    width:var(--labelWidth);min-width:var(--labelWidth);
     display:flex;align-items:center;justify-content:flex-end;gap:8px;
-    padding-right:12px;font-size:10px;color:var(--sonuk);user-select:none;
+    padding-right:12px;font-size:10px;color:var(--faint);user-select:none;
   }
-  .basEtiket .derece{color:#3d3d47}
-  .basEtiket.kok{color:var(--bas)}
-  .basIzgara .adim{height:22px;border-radius:4px}
-  .basIzgara .adim.acik{box-shadow:0 0 12px -2px var(--bas)}
+  .bassLabel .degree{color:#3d3d47}
+  .bassLabel.root{color:var(--bass)}
+  .bassGrid .step{height:22px;border-radius:4px}
+  .bassGrid .step.active{box-shadow:0 0 12px -2px var(--bass)}
 
-  /* ---- bildirimler (alert yok) ---- */
-  .bildirimler{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:50}
-  .bildirim{
+  /* ---- toasts (no alert dialogs) ---- */
+  .toasts{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:50}
+  .toast{
     background:var(--panel-2);border:1px solid var(--line);border-left:3px solid var(--amber);
     border-radius:7px;padding:11px 15px;font-size:12px;color:var(--text);
-    box-shadow:0 10px 30px rgba(0,0,0,.6);animation:gir .18s ease-out;
+    box-shadow:0 10px 30px rgba(0,0,0,.6);animation:toastIn .18s ease-out;
   }
-  .bildirim.hata{border-left-color:var(--kirmizi)}
-  .bildirim.cikiyor{animation:cik .25s ease-in forwards}
-  @keyframes gir{from{opacity:0;transform:translateY(10px)}}
-  @keyframes cik{to{opacity:0;transform:translateX(14px)}}
+  .toast.error{border-left-color:var(--red)}
+  .toast.leaving{animation:toastOut .25s ease-in forwards}
+  @keyframes toastIn{from{opacity:0;transform:translateY(10px)}}
+  @keyframes toastOut{to{opacity:0;transform:translateX(14px)}}
 
   footer{margin-top:20px;color:var(--dim);font-size:12px;line-height:1.85}
   footer b{color:var(--amber);font-weight:400}
@@ -218,1072 +218,1108 @@
 </style>
 </head>
 <body>
-<div class="kasa">
+<div class="shell">
 
   <header>
     <h1>RİTİM</h1>
-    <div id="durum">—</div>
+    <div id="status">—</div>
   </header>
 
   <div class="panel">
-    <div class="kontrol">
-      <button id="calBtn">▶ ÇAL</button>
-      <div class="ayirac"></div>
-      <label class="kaydir">TEMPO <input type="range" id="bpm" min="60" max="200" value="96"><b id="bpmYazi">96</b></label>
-      <label class="kaydir">SWING <input type="range" id="swing" min="0" max="40" value="0"><b id="swingYazi">0%</b></label>
-      <label class="kaydir">SES <input type="range" id="ses" min="0" max="100" value="80"><b id="sesYazi">80</b></label>
-      <div class="ayirac"></div>
-      <button id="wavBtn" class="ince">⤓ WAV İNDİR</button>
-      <button id="temizle" class="ince">TEMİZLE</button>
+    <div class="transport">
+      <button id="playBtn">▶ PLAY</button>
+      <div class="divider"></div>
+      <label class="slider">TEMPO <input type="range" id="bpm" min="60" max="200" value="96"><b id="bpmVal">96</b></label>
+      <label class="slider">SWING <input type="range" id="swing" min="0" max="40" value="0"><b id="swingVal">0%</b></label>
+      <label class="slider">VOL <input type="range" id="volume" min="0" max="100" value="80"><b id="volVal">80</b></label>
+      <div class="divider"></div>
+      <button id="wavBtn" class="thin">⤓ DOWNLOAD WAV</button>
+      <button id="clearBtn" class="thin">CLEAR</button>
     </div>
   </div>
 
   <div class="panel">
-    <div class="panelBaslik">HAZIR RİTİMLER — seçtiğin bölüme yüklenir</div>
-    <div class="gruplar" id="ritimler"></div>
+    <div class="panelTitle">PRESET PATTERNS — loaded into the selected section</div>
+    <div class="groups" id="patterns"></div>
   </div>
 
   <div class="panel">
-    <div class="panelBaslik">ŞARKI</div>
-    <div class="gruplar">
-      <div class="grup">
-        <div class="grupAd">HAZIR ŞARKI</div>
-        <div id="sarkilar" style="display:contents"></div>
-        <span class="ipucu">bir tanesine bas, gerisi kendi gelir</span>
+    <div class="panelTitle">SONG</div>
+    <div class="groups">
+      <div class="group">
+        <div class="groupName">DEMO SONG</div>
+        <div id="songs" style="display:contents"></div>
+        <span class="hint">press one, the rest takes care of itself</span>
       </div>
-      <div class="grup mod">
-        <div class="grupAd">ÇALMA</div>
-        <button id="modDongu" class="secili">DÖNGÜ</button>
-        <button id="modSarki">ŞARKI</button>
-        <span class="ipucu" id="modIpucu">tek bölüm döner durur</span>
+      <div class="group mode">
+        <div class="groupName">PLAYBACK</div>
+        <button id="modeLoop" class="selected">LOOP</button>
+        <button id="modeSong">SONG</button>
+        <span class="hint">one section loops forever</span>
       </div>
-      <div class="grup">
-        <div class="grupAd">DİZİLİM</div>
-        <div id="dizilimEl" style="display:contents"></div>
-        <span class="ipucu">kutulara bas: A → B → C → D → boş</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="panel">
-    <div class="panelBaslik">KENDİ ŞARKILARIN</div>
-    <div class="gruplar">
-      <div class="grup">
-        <div class="grupAd">KAYITLARIM</div>
-        <div id="kayitlar" style="display:contents"></div>
-        <span class="bos" id="kayitYok">henüz kayıt yok</span>
-      </div>
-      <div class="grup">
-        <div class="grupAd"></div>
-        <input type="text" id="kayitAdi" placeholder="şarkına bir ad ver…" maxlength="24">
-        <button id="kaydetBtn" class="ince">KAYDET</button>
-        <div class="ayirac"></div>
-        <button id="yedekAl" class="ince">YEDEK AL</button>
-        <button id="yedekYukle" class="ince">YEDEĞİ YÜKLE</button>
-        <input type="file" id="dosya" accept=".json,application/json" hidden>
+      <div class="group">
+        <div class="groupName">ARRANGEMENT</div>
+        <div id="arrangement" style="display:contents"></div>
+        <span class="hint">click the slots: A → B → C → D → empty</span>
       </div>
     </div>
   </div>
 
   <div class="panel">
-    <div class="bolumSerit">
-      <div class="basAd">BÖLÜM</div>
-      <div id="bolumler" style="display:contents"></div>
-      <span class="ipucu">hangisi seçiliyse aşağıdaki ızgara onu düzenler</span>
+    <div class="panelTitle">YOUR OWN SONGS</div>
+    <div class="groups">
+      <div class="group">
+        <div class="groupName">SAVED</div>
+        <div id="savedList" style="display:contents"></div>
+        <span class="empty" id="noSaved">nothing saved yet</span>
+      </div>
+      <div class="group">
+        <div class="groupName"></div>
+        <input type="text" id="saveName" placeholder="give your song a name…" maxlength="24">
+        <button id="saveBtn" class="thin">SAVE</button>
+        <div class="divider"></div>
+        <button id="backupBtn" class="thin">EXPORT BACKUP</button>
+        <button id="restoreBtn" class="thin">LOAD BACKUP</button>
+        <input type="file" id="fileInput" accept=".json,application/json" hidden>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="sectionBar">
+      <div class="laneLabel">SECTION</div>
+      <div id="sections" style="display:contents"></div>
+      <span class="hint">the grid below edits whichever one is selected</span>
     </div>
 
-    <div class="izgara" id="izgara"></div>
+    <div class="grid" id="grid"></div>
 
-    <div class="basSerit">
-      <div class="basAd">BAS</div>
-      <label>KÖK <select id="kok"></select></label>
-      <label>DİZİ <select id="dizi"></select></label>
-      <button id="basSustur" class="ince">SUSTUR</button>
-      <button id="basTemizle" class="ince">TEMİZLE</button>
+    <div class="bassBar">
+      <div class="laneLabel">BASS</div>
+      <label>ROOT <select id="rootSel"></select></label>
+      <label>SCALE <select id="scaleSel"></select></label>
+      <button id="bassMute" class="thin">MUTE</button>
+      <button id="bassClear" class="thin">CLEAR</button>
     </div>
-    <div class="izgara basIzgara" id="basIzgara"></div>
+    <div class="grid bassGrid" id="bassGrid"></div>
   </div>
 
   <footer>
-    <b>Nasıl kullanılır:</b> bir ritme tıkla ya da kutuları kendin doldur, <kbd>ÇAL</kbd>'a bas
-    (<kbd>boşluk</kbd> tuşu da olur). Enstrüman adına tıklarsan o satırı susturur, yanındaki
-    <b>×</b> satırı temizler.<br>
-    <b>Şarkı yapmak:</b> dört bölüm var — A, B, C, D. Her birine ayrı bir ritim kur, sonra
-    <b>DİZİLİM</b> kutularına bas ve sıralarını seç. <kbd>ŞARKI</kbd> moduna alınca dizilimi
-    baştan sona çalar. En kolay yol: yukarıdan hazır bir şarkıya basıp içini kurcalamak.<br>
-    <b>Bas hattı:</b> her sütuna tek nota konur. Kutular diziye bağlı olduğu için hangi notaya
-    basarsan bas kulağı tırmalamaz — <b>KÖK</b> perdeyi, <b>DİZİ</b> havayı değiştirir.<br>
-    <b>WAV İNDİR</b> o an çalanı ses dosyası yapıp bilgisayarına indirir; telefona atıp dinleyebilirsin.
+    <b>How to use it:</b> click a pattern or fill the cells in yourself, then hit <kbd>PLAY</kbd>
+    (the <kbd>space</kbd> bar works too). Clicking an instrument name mutes that row; the
+    <b>×</b> next to it clears the row.<br>
+    <b>Making a song:</b> there are four sections — A, B, C, D. Build a different pattern in each,
+    then click the <b>ARRANGEMENT</b> slots to set their order. Switch to <kbd>SONG</kbd> mode and
+    it plays the arrangement start to finish. The easiest way in: press one of the demo songs above
+    and take it apart.<br>
+    <b>Bass line:</b> one note per column. The cells follow the scale, so whichever note you press
+    it stays in key — <b>ROOT</b> changes the pitch, <b>SCALE</b> changes the mood.<br>
+    <b>DOWNLOAD WAV</b> turns whatever is playing into an audio file on your computer; copy it to
+    your phone and listen to it there.
   </footer>
 
 </div>
 
-<div class="bildirimler" id="bildirimler"></div>
+<div class="toasts" id="toasts"></div>
 
 <script>
 /* ============================================================
-   RİTİM — 16 adımlık ritim makinesi + bas hattı + şarkı modu
-   Hiç ses dosyası yok. Her ses Web Audio ile o an üretiliyor:
-   bir dalga başlatılıp sesi hızla kısılıyor. Kısılma süresi
-   karakteri belirliyor — kısa kesilirse "tık", uzun sönerse "bumm".
+   RİTİM — 16-step drum machine + bass line + song mode
+   There is not a single audio file here. Every sound is generated
+   on the spot with Web Audio: a wave starts and its volume is
+   pulled down fast. The length of that fade is the character —
+   cut it short and you get a "tick", let it ring and you get a "boom".
    ============================================================ */
 
-const ADIM_SAYISI = 16;
-const BAS_DERECE  = 8;    // bas ızgarasındaki satır sayısı (kökten oktava)
-const BOLUM_SAYISI = 4;   // A B C D
-const SLOT_SAYISI  = 8;   // dizilimdeki kutu sayısı
-const BOLUM_ADLARI = ['A','B','C','D'];
+const STEP_COUNT    = 16;
+const BASS_DEGREES  = 8;    // number of rows in the bass grid (root to octave)
+const SECTION_COUNT = 4;    // A B C D
+const SLOT_COUNT    = 8;    // slots in the arrangement
+const SECTION_NAMES = ['A','B','C','D'];
 
-/* --- davullar: ad, renk, ses fonksiyonunun anahtarı --- */
-const ENSTRUMANLAR = [
-  { ad:'BAS DAVUL',   anahtar:'kick',  renk:'#ff4d4d' },
-  { ad:'TRAMPET',     anahtar:'snare', renk:'#ff9f2e' },
-  { ad:'HI-HAT',      anahtar:'hihat', renk:'#ffd83d' },
-  { ad:'AÇIK HI-HAT', anahtar:'ahihat',renk:'#9ee34f' },
-  { ad:'ALKIŞ',       anahtar:'clap',  renk:'#3ddbd9' },
-  { ad:'TOM',         anahtar:'tom',   renk:'#8f7dff' },
-  { ad:'ZİL',         anahtar:'zil',   renk:'#ff6fd8' },
+/* --- drums: name, colour, key of the voice function --- */
+const INSTRUMENTS = [
+  { name:'KICK',         key:'kick',    colour:'#ff4d4d' },
+  { name:'SNARE',        key:'snare',   colour:'#ff9f2e' },
+  { name:'HI-HAT',       key:'hihat',   colour:'#ffd83d' },
+  { name:'OPEN HI-HAT',  key:'ohihat',  colour:'#9ee34f' },
+  { name:'CLAP',         key:'clap',    colour:'#3ddbd9' },
+  { name:'TOM',          key:'tom',     colour:'#8f7dff' },
+  { name:'COWBELL',      key:'cowbell', colour:'#ff6fd8' },
 ];
 
-/* --- diziler: kökten itibaren kaç yarım ses uzakta oldukları --- */
-const DIZILER = {
-  minor:      { ad:'Minör',      araliklar:[0,2,3,5,7,8,10,12] },
-  major:      { ad:'Majör',      araliklar:[0,2,4,5,7,9,11,12] },
-  pentatonik: { ad:'Pentatonik', araliklar:[0,3,5,7,10,12,15,17] },
-  blues:      { ad:'Blues',      araliklar:[0,3,5,6,7,10,12,15] },
-  hicaz:      { ad:'Hicaz',      araliklar:[0,1,4,5,7,8,10,12] },
-  frigyen:    { ad:'Frigyen',    araliklar:[0,1,3,5,7,8,10,12] },
+/* --- scales: how many semitones each degree sits above the root --- */
+const SCALES = {
+  minor:      { name:'Minor',      intervals:[0,2,3,5,7,8,10,12] },
+  major:      { name:'Major',      intervals:[0,2,4,5,7,9,11,12] },
+  pentatonic: { name:'Pentatonic', intervals:[0,3,5,7,10,12,15,17] },
+  blues:      { name:'Blues',      intervals:[0,3,5,6,7,10,12,15] },
+  hicaz:      { name:'Hicaz',      intervals:[0,1,4,5,7,8,10,12] },
+  phrygian:   { name:'Phrygian',   intervals:[0,1,3,5,7,8,10,12] },
 };
-const NOTALAR = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-const KOK_EN_ALT = 33;              // A1 — bas için rahat bir taban
-const notaAdi = m => NOTALAR[m % 12] + (Math.floor(m / 12) - 1);
-const frekans = m => 440 * Math.pow(2, (m - 69) / 12);
+const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const LOWEST_ROOT = 33;             // A1 — a comfortable floor for the bass
+const noteName = m => NOTES[m % 12] + (Math.floor(m / 12) - 1);
+const freq = m => 440 * Math.pow(2, (m - 69) / 12);
 
-const BOS = '................';
-
-/* ============================================================
-   HAZIR RİTİMLER
-   Davul satırları enstrüman sırasıyla aynı:
-   bas davul · trampet · hi-hat · açık hi-hat · alkış · tom · zil
-   'x' = vur, '.' = sus. Her dizi tam 16 karakter.
-   bas: rakam = dizinin kaçıncı notası (1 kök, 5 beşli, 8 oktav), '.' = sus.
-   ============================================================ */
-const GRUPLAR = [
-  { grup:'KLASİK', ritimler:[
-    { ad:'TEMEL', bpm:96, swing:0, satirlar:[
-      'x...x...x...x...','....x.......x...','x.x.x.x.x.x.x.x.',BOS,BOS,BOS,BOS],
-      bas:'1.......5.......' },
-    { ad:'ROCK', bpm:128, swing:0, satirlar:[
-      'x.....x.x.....x.','....x.......x...','x.x.x.x.x.x.x.x.','..............x.',BOS,BOS,BOS],
-      bas:'1...1...5...4...' },
-    { ad:'POP', bpm:112, swing:0, satirlar:[
-      'x.......x.......','....x.......x...','x.x.x.x.x.x.x.x.',BOS,'....x.......x...',BOS,BOS],
-      bas:'1...1...6...5...' },
-    { ad:'MARŞ', bpm:118, swing:0, satirlar:[
-      'x...x...x...x...','x.xxx...x.xxx...',BOS,BOS,BOS,'....x.......x...',BOS],
-      bas:'1...1...5...5...' },
-    { ad:'SHUFFLE', bpm:92, swing:33, dizi:'blues', satirlar:[
-      'x...x...x...x...','....x.......x...','x.x.x.x.x.x.x.x.',BOS,BOS,BOS,BOS],
-      bas:'1...3...5...3...' },
-  ]},
-
-  { grup:'DANS', ritimler:[
-    { ad:'DİSKO', bpm:120, swing:0, satirlar:[
-      'x...x...x...x...','....x.......x...','x...x...x...x...','..x...x...x...x.','....x.......x...',BOS,BOS],
-      bas:'1.8.1.8.1.8.1.8.' },
-    { ad:'HOUSE', bpm:126, swing:0, satirlar:[
-      'x...x...x...x...',BOS,'x.x.x.x.x.x.x.x.','..x...x...x...x.','....x.......x...',BOS,BOS],
-      bas:'1...1.8.1...5...' },
-    { ad:'TECHNO', bpm:132, swing:0, satirlar:[
-      'x...x...x...x...',BOS,'..x...x...x...x.','..............x.','....x.......x...','............x.x.',BOS],
-      bas:'1.1.1.1.8.8.5.5.' },
-    { ad:'DUBSTEP', bpm:140, swing:0, satirlar:[
-      'x.........x.....','........x.......','..x...x...x...x.','..............x.','........x.......','.............x..',BOS],
-      bas:'1.........5.....' },
-    { ad:'DRUM & BASS', bpm:174, swing:0, satirlar:[
-      'x.....x.....x...','....x.......x...','x.x.x.x.x.x.x.x.','..............x.',BOS,'..........x.....',BOS],
-      bas:'1.....1...5.....' },
-  ]},
-
-  { grup:'HIP-HOP', ritimler:[
-    { ad:'BOOM BAP', bpm:88, swing:20, satirlar:[
-      'x.......x..x....','....x.......x...','x.x.x.x.x.x.x.x.',BOS,BOS,BOS,BOS],
-      bas:'1...5...1...4...' },
-    { ad:'TRAP', bpm:140, swing:0, satirlar:[
-      'x.....x...x.....','........x.......','x.xxx.x.xxx.x.xx',BOS,'........x.......','..............x.',BOS],
-      bas:'1.....1...4...5.' },
-    { ad:'DRILL', bpm:142, swing:8, satirlar:[
-      'x.....x.....x.x.','........x.......','x.x.xxx.x.x.xxx.',BOS,'........x.......','.............x..',BOS],
-      bas:'1.....1.....5.4.' },
-    { ad:'LO-FI', bpm:78, swing:26, satirlar:[
-      'x.......x.......','....x.......x...','x..x..x.x..x..x.',BOS,BOS,BOS,BOS],
-      bas:'1.......5...4...' },
-  ]},
-
-  { grup:'GROOVE', ritimler:[
-    { ad:'FUNK', bpm:104, swing:16, satirlar:[
-      'x..x..x...x..x..','....x.......x...','xxxxxxxxxxxxxxxx',BOS,BOS,'..............x.',BOS],
-      bas:'1..1..1.5..5.4..' },
-    { ad:'AFROBEAT', bpm:108, swing:10, satirlar:[
-      'x..x..x...x.x...','....x.......x...','x.xxx.xxx.xxx.xx',BOS,'..x...x...x...x.','......x.......x.','x..x..x...x.x...'],
-      bas:'1..1..5...1.5...' },
-    { ad:'REGGAETON', bpm:95, swing:0, satirlar:[
-      'x...x...x...x...','...x..x....x..x.','x.x.x.x.x.x.x.x.',BOS,'...x..x....x..x.',BOS,BOS],
-      bas:'1...1...5...5...' },
-    { ad:'SAMBA', bpm:100, swing:0, satirlar:[
-      'x..x.x..x..x.x..','....x..x....x..x','x.x.x.x.x.x.x.x.',BOS,BOS,'..............x.','..x..x.x..x..x.x'],
-      bas:'1..1.5..1..1.5..' },
-    { ad:'BOSSA', bpm:122, swing:0, satirlar:[
-      'x..x..x...x..x..',BOS,'x.x.x.x.x.x.x.x.',BOS,BOS,BOS,'..x...x.x...x...'],
-      bas:'1..5..1...5..1..' },
-  ]},
-
-  { grup:'ÖZEL', ritimler:[
-    { ad:'KARA ŞİMŞEK', bpm:150, swing:0, satirlar:[
-      'x..x..x.x..x..x.','....x.......x...','xxxxxxxxxxxxxxxx',BOS,'....x.......x...','x.............x.','..x...x...x...x.'],
-      bas:'1.1.1.1.5.5.4.4.' },
-    { ad:'HALAY', bpm:130, swing:0, dizi:'frigyen', satirlar:[
-      'x...x...x.x.x...','..x...x...x...x.',BOS,BOS,BOS,'............x.x.',BOS],
-      bas:'1...1...1.5.1...' },
-    { ad:'ÇİFTETELLİ', bpm:102, swing:0, dizi:'hicaz', satirlar:[
-      'x..x....x.x.....','......x.....x.x.','x.x.x.x.x.x.x.x.',BOS,BOS,BOS,BOS],
-      bas:'1..1....5.4.....' },
-  ]},
-];
-const TUM_RITIMLER = GRUPLAR.flatMap(g => g.ritimler);
+const EMPTY = '................';
 
 /* ============================================================
-   HAZIR ŞARKILAR
-   Dört bölüm (A B C D) + hangi sırayla çalınacağı.
-   dizilim'deki harfler bölüm adları, '-' boş kutu demek.
+   PRESET PATTERNS
+   The drum rows follow the instrument order:
+   kick · snare · hi-hat · open hi-hat · clap · tom · cowbell
+   'x' = hit, '.' = rest. Every string is exactly 16 characters.
+   bass: a digit is the degree of the scale (1 root, 5 fifth,
+   8 octave), '.' = rest.
    ============================================================ */
-const SARKILAR = [
-  { ad:'GECE', bpm:84, swing:22, kok:33, dizi:'minor', dizilim:'AABACDBA', bolumler:[
-    { satirlar:['x.......x.......','....x.......x...','x..x..x.x..x..x.',BOS,BOS,BOS,BOS], bas:'1.......5.......' },
-    { satirlar:['x.......x...x...','....x.......x...','x.x.x.x.x.x.x.x.','..............x.','....x.......x...',BOS,BOS], bas:'1...1...5...4...' },
-    { satirlar:['x...............',BOS,BOS,BOS,BOS,BOS,'..x...x...x...x.'], bas:'1...3...5...3...' },
-    { satirlar:['x..x....x...x...','....x.......x...','x.x.x.x.x.x.x.x.','......x.......x.','....x.......x...','............x.x.',BOS], bas:'1..1..5...1.5...' },
+const PATTERN_GROUPS = [
+  { group:'CLASSIC', patterns:[
+    { name:'BASIC', bpm:96, swing:0, rows:[
+      'x...x...x...x...','....x.......x...','x.x.x.x.x.x.x.x.',EMPTY,EMPTY,EMPTY,EMPTY],
+      bass:'1.......5.......' },
+    { name:'ROCK', bpm:128, swing:0, rows:[
+      'x.....x.x.....x.','....x.......x...','x.x.x.x.x.x.x.x.','..............x.',EMPTY,EMPTY,EMPTY],
+      bass:'1...1...5...4...' },
+    { name:'POP', bpm:112, swing:0, rows:[
+      'x.......x.......','....x.......x...','x.x.x.x.x.x.x.x.',EMPTY,'....x.......x...',EMPTY,EMPTY],
+      bass:'1...1...6...5...' },
+    { name:'MARCH', bpm:118, swing:0, rows:[
+      'x...x...x...x...','x.xxx...x.xxx...',EMPTY,EMPTY,EMPTY,'....x.......x...',EMPTY],
+      bass:'1...1...5...5...' },
+    { name:'SHUFFLE', bpm:92, swing:33, scale:'blues', rows:[
+      'x...x...x...x...','....x.......x...','x.x.x.x.x.x.x.x.',EMPTY,EMPTY,EMPTY,EMPTY],
+      bass:'1...3...5...3...' },
   ]},
 
-  { ad:'ÇARŞI', bpm:104, swing:0, kok:38, dizi:'hicaz', dizilim:'AABCABDD', bolumler:[
-    { satirlar:['x..x....x.x.....','......x.....x.x.','x.x.x.x.x.x.x.x.',BOS,BOS,BOS,BOS], bas:'1..1....5.4.....' },
-    { satirlar:['x..x....x.x.....','......x.....x.x.','x.x.x.x.x.x.x.x.',BOS,'......x.....x...',BOS,'..x...x...x...x.'], bas:'1..1....5.4...2.' },
-    { satirlar:['x.......x.......',BOS,BOS,BOS,BOS,'x.x.x...x.x.x...',BOS], bas:'1.......4.......' },
-    { satirlar:['x..x..x.x.x...x.','......x.....x.x.','xxxxxxxxxxxxxxxx',BOS,'......x.....x...','............x.x.','..x...x...x...x.'], bas:'1..1.5..4.3.1...' },
+  { group:'DANCE', patterns:[
+    { name:'DISCO', bpm:120, swing:0, rows:[
+      'x...x...x...x...','....x.......x...','x...x...x...x...','..x...x...x...x.','....x.......x...',EMPTY,EMPTY],
+      bass:'1.8.1.8.1.8.1.8.' },
+    { name:'HOUSE', bpm:126, swing:0, rows:[
+      'x...x...x...x...',EMPTY,'x.x.x.x.x.x.x.x.','..x...x...x...x.','....x.......x...',EMPTY,EMPTY],
+      bass:'1...1.8.1...5...' },
+    { name:'TECHNO', bpm:132, swing:0, rows:[
+      'x...x...x...x...',EMPTY,'..x...x...x...x.','..............x.','....x.......x...','............x.x.',EMPTY],
+      bass:'1.1.1.1.8.8.5.5.' },
+    { name:'DUBSTEP', bpm:140, swing:0, rows:[
+      'x.........x.....','........x.......','..x...x...x...x.','..............x.','........x.......','.............x..',EMPTY],
+      bass:'1.........5.....' },
+    { name:'DRUM & BASS', bpm:174, swing:0, rows:[
+      'x.....x.....x...','....x.......x...','x.x.x.x.x.x.x.x.','..............x.',EMPTY,'..........x.....',EMPTY],
+      bass:'1.....1...5.....' },
   ]},
 
-  { ad:'OTOBAN', bpm:146, swing:0, kok:40, dizi:'minor', dizilim:'ABCCABCD', bolumler:[
-    { satirlar:['x...x...x...x...',BOS,'..x...x...x...x.',BOS,BOS,BOS,BOS], bas:'1.1.1.1.1.1.1.1.' },
-    { satirlar:['x...x...x...x...','....x.......x...','x.x.x.x.x.x.x.x.','..............x.','....x.......x...',BOS,BOS], bas:'1.1.1.1.8.8.5.5.' },
-    { satirlar:['x..x..x.x..x..x.','....x.......x...','xxxxxxxxxxxxxxxx',BOS,'....x.......x...','x.............x.','..x...x...x...x.'], bas:'1.1.5.5.4.4.5.5.' },
-    { satirlar:['x.......x.......','............x.x.',BOS,'..............x.',BOS,'........x.x.x.x.',BOS], bas:'1.......5.......' },
+  { group:'HIP-HOP', patterns:[
+    { name:'BOOM BAP', bpm:88, swing:20, rows:[
+      'x.......x..x....','....x.......x...','x.x.x.x.x.x.x.x.',EMPTY,EMPTY,EMPTY,EMPTY],
+      bass:'1...5...1...4...' },
+    { name:'TRAP', bpm:140, swing:0, rows:[
+      'x.....x...x.....','........x.......','x.xxx.x.xxx.x.xx',EMPTY,'........x.......','..............x.',EMPTY],
+      bass:'1.....1...4...5.' },
+    { name:'DRILL', bpm:142, swing:8, rows:[
+      'x.....x.....x.x.','........x.......','x.x.xxx.x.x.xxx.',EMPTY,'........x.......','.............x..',EMPTY],
+      bass:'1.....1.....5.4.' },
+    { name:'LO-FI', bpm:78, swing:26, rows:[
+      'x.......x.......','....x.......x...','x..x..x.x..x..x.',EMPTY,EMPTY,EMPTY,EMPTY],
+      bass:'1.......5...4...' },
+  ]},
+
+  { group:'GROOVE', patterns:[
+    { name:'FUNK', bpm:104, swing:16, rows:[
+      'x..x..x...x..x..','....x.......x...','xxxxxxxxxxxxxxxx',EMPTY,EMPTY,'..............x.',EMPTY],
+      bass:'1..1..1.5..5.4..' },
+    { name:'AFROBEAT', bpm:108, swing:10, rows:[
+      'x..x..x...x.x...','....x.......x...','x.xxx.xxx.xxx.xx',EMPTY,'..x...x...x...x.','......x.......x.','x..x..x...x.x...'],
+      bass:'1..1..5...1.5...' },
+    { name:'REGGAETON', bpm:95, swing:0, rows:[
+      'x...x...x...x...','...x..x....x..x.','x.x.x.x.x.x.x.x.',EMPTY,'...x..x....x..x.',EMPTY,EMPTY],
+      bass:'1...1...5...5...' },
+    { name:'SAMBA', bpm:100, swing:0, rows:[
+      'x..x.x..x..x.x..','....x..x....x..x','x.x.x.x.x.x.x.x.',EMPTY,EMPTY,'..............x.','..x..x.x..x..x.x'],
+      bass:'1..1.5..1..1.5..' },
+    { name:'BOSSA', bpm:122, swing:0, rows:[
+      'x..x..x...x..x..',EMPTY,'x.x.x.x.x.x.x.x.',EMPTY,EMPTY,EMPTY,'..x...x.x...x...'],
+      bass:'1..5..1...5..1..' },
+  ]},
+
+  { group:'SPECIAL', patterns:[
+    { name:'KNIGHT RIDER', bpm:150, swing:0, rows:[
+      'x..x..x.x..x..x.','....x.......x...','xxxxxxxxxxxxxxxx',EMPTY,'....x.......x...','x.............x.','..x...x...x...x.'],
+      bass:'1.1.1.1.5.5.4.4.' },
+    { name:'HALAY', bpm:130, swing:0, scale:'phrygian', rows:[
+      'x...x...x.x.x...','..x...x...x...x.',EMPTY,EMPTY,EMPTY,'............x.x.',EMPTY],
+      bass:'1...1...1.5.1...' },
+    { name:'ÇİFTETELLİ', bpm:102, swing:0, scale:'hicaz', rows:[
+      'x..x....x.x.....','......x.....x.x.','x.x.x.x.x.x.x.x.',EMPTY,EMPTY,EMPTY,EMPTY],
+      bass:'1..1....5.4.....' },
+  ]},
+];
+const ALL_PATTERNS = PATTERN_GROUPS.flatMap(g => g.patterns);
+
+/* ============================================================
+   DEMO SONGS
+   Four sections (A B C D) plus the order they play in.
+   Letters in 'arrangement' are section names, '-' is an empty slot.
+   ============================================================ */
+const SONGS = [
+  { name:'NIGHT', bpm:84, swing:22, root:33, scale:'minor', arrangement:'AABACDBA', sections:[
+    { rows:['x.......x.......','....x.......x...','x..x..x.x..x..x.',EMPTY,EMPTY,EMPTY,EMPTY], bass:'1.......5.......' },
+    { rows:['x.......x...x...','....x.......x...','x.x.x.x.x.x.x.x.','..............x.','....x.......x...',EMPTY,EMPTY], bass:'1...1...5...4...' },
+    { rows:['x...............',EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,'..x...x...x...x.'], bass:'1...3...5...3...' },
+    { rows:['x..x....x...x...','....x.......x...','x.x.x.x.x.x.x.x.','......x.......x.','....x.......x...','............x.x.',EMPTY], bass:'1..1..5...1.5...' },
+  ]},
+
+  { name:'BAZAAR', bpm:104, swing:0, root:38, scale:'hicaz', arrangement:'AABCABDD', sections:[
+    { rows:['x..x....x.x.....','......x.....x.x.','x.x.x.x.x.x.x.x.',EMPTY,EMPTY,EMPTY,EMPTY], bass:'1..1....5.4.....' },
+    { rows:['x..x....x.x.....','......x.....x.x.','x.x.x.x.x.x.x.x.',EMPTY,'......x.....x...',EMPTY,'..x...x...x...x.'], bass:'1..1....5.4...2.' },
+    { rows:['x.......x.......',EMPTY,EMPTY,EMPTY,EMPTY,'x.x.x...x.x.x...',EMPTY], bass:'1.......4.......' },
+    { rows:['x..x..x.x.x...x.','......x.....x.x.','xxxxxxxxxxxxxxxx',EMPTY,'......x.....x...','............x.x.','..x...x...x...x.'], bass:'1..1.5..4.3.1...' },
+  ]},
+
+  { name:'HIGHWAY', bpm:146, swing:0, root:40, scale:'minor', arrangement:'ABCCABCD', sections:[
+    { rows:['x...x...x...x...',EMPTY,'..x...x...x...x.',EMPTY,EMPTY,EMPTY,EMPTY], bass:'1.1.1.1.1.1.1.1.' },
+    { rows:['x...x...x...x...','....x.......x...','x.x.x.x.x.x.x.x.','..............x.','....x.......x...',EMPTY,EMPTY], bass:'1.1.1.1.8.8.5.5.' },
+    { rows:['x..x..x.x..x..x.','....x.......x...','xxxxxxxxxxxxxxxx',EMPTY,'....x.......x...','x.............x.','..x...x...x...x.'], bass:'1.1.5.5.4.4.5.5.' },
+    { rows:['x.......x.......','............x.x.',EMPTY,'..............x.',EMPTY,'........x.x.x.x.',EMPTY], bass:'1.......5.......' },
   ]},
 ];
 
-/* 16 karakter kuralını hem ritimler hem şarkılar için denetle */
-function uzunlukDenetle(etiket, satirlar, bas){
-  satirlar.forEach((d, i) => {
-    if (d.length !== ADIM_SAYISI) console.warn(`${etiket} — ${i + 1}. davul satırı ${d.length} karakter, 16 olmalı`);
+/* check the 16-character rule for both patterns and songs */
+function checkLength(label, rows, bass){
+  rows.forEach((d, i) => {
+    if (d.length !== STEP_COUNT) console.warn(`${label} — drum row ${i + 1} is ${d.length} characters, should be 16`);
   });
-  if (bas && bas.length !== ADIM_SAYISI) console.warn(`${etiket} — bas satırı ${bas.length} karakter, 16 olmalı`);
+  if (bass && bass.length !== STEP_COUNT) console.warn(`${label} — bass row is ${bass.length} characters, should be 16`);
 }
-TUM_RITIMLER.forEach(r => uzunlukDenetle(`"${r.ad}" ritmi`, r.satirlar, r.bas));
-SARKILAR.forEach(s => s.bolumler.forEach((b, i) =>
-  uzunlukDenetle(`"${s.ad}" şarkısının ${BOLUM_ADLARI[i]} bölümü`, b.satirlar, b.bas)));
+ALL_PATTERNS.forEach(p => checkLength(`pattern "${p.name}"`, p.rows, p.bass));
+SONGS.forEach(s => s.sections.forEach((b, i) =>
+  checkLength(`section ${SECTION_NAMES[i]} of song "${s.name}"`, b.rows, b.bass)));
 
 /* ============================================================
-   ARAYÜZ ELEMANLARI
+   UI ELEMENTS
    ============================================================ */
-const izgara      = document.getElementById('izgara');
-const basIzgaraEl = document.getElementById('basIzgara');
-const ritimlerEl  = document.getElementById('ritimler');
-const sarkilarEl  = document.getElementById('sarkilar');
-const dizilimUI   = document.getElementById('dizilimEl');
-const bolumlerUI  = document.getElementById('bolumler');
-const kayitlarEl  = document.getElementById('kayitlar');
-const kayitYokEl  = document.getElementById('kayitYok');
-const kayitAdiEl  = document.getElementById('kayitAdi');
-const durumEl     = document.getElementById('durum');
-const bildirimEl  = document.getElementById('bildirimler');
-const calBtn      = document.getElementById('calBtn');
+const gridEl      = document.getElementById('grid');
+const bassGridEl  = document.getElementById('bassGrid');
+const patternsEl  = document.getElementById('patterns');
+const songsEl     = document.getElementById('songs');
+const arrangeUI   = document.getElementById('arrangement');
+const sectionsUI  = document.getElementById('sections');
+const savedEl     = document.getElementById('savedList');
+const noSavedEl   = document.getElementById('noSaved');
+const saveNameEl  = document.getElementById('saveName');
+const statusEl    = document.getElementById('status');
+const toastEl     = document.getElementById('toasts');
+const playBtn     = document.getElementById('playBtn');
 const wavBtn      = document.getElementById('wavBtn');
 const bpm         = document.getElementById('bpm');
 const swing       = document.getElementById('swing');
-const ses         = document.getElementById('ses');
-const kokSec      = document.getElementById('kok');
-const diziSec     = document.getElementById('dizi');
-const modDongu    = document.getElementById('modDongu');
-const modSarki    = document.getElementById('modSarki');
-const modIpucu    = document.getElementById('modIpucu');
-const bpmDegeri   = () => Number(bpm.value);
+const volume      = document.getElementById('volume');
+const rootSel     = document.getElementById('rootSel');
+const scaleSel    = document.getElementById('scaleSel');
+const modeLoop    = document.getElementById('modeLoop');
+const modeSong    = document.getElementById('modeSong');
+const modeHint    = document.querySelector('.mode .hint');
+const bpmValue    = () => Number(bpm.value);
 
 /* ============================================================
-   BİLDİRİM — tarayıcının alert'i sayfayı kilitler, kendimiz yapıyoruz
+   TOAST — the browser's alert() freezes the page, so we roll our own
    ============================================================ */
-function bildir(mesaj, tur){
+function notify(message, kind){
   const b = document.createElement('div');
-  b.className = 'bildirim' + (tur === 'hata' ? ' hata' : '');
-  b.textContent = mesaj;
-  bildirimEl.appendChild(b);
-  setTimeout(() => { b.classList.add('cikiyor'); setTimeout(() => b.remove(), 260); }, 2600);
+  b.className = 'toast' + (kind === 'error' ? ' error' : '');
+  b.textContent = message;
+  toastEl.appendChild(b);
+  setTimeout(() => { b.classList.add('leaving'); setTimeout(() => b.remove(), 260); }, 2600);
   return b;
 }
 
 /* ============================================================
-   SES ÜRETİMİ
-   Bütün ses fonksiyonları hangi ses bağlamında (K) ve nereye (hedef)
-   çalacaklarını dışarıdan alıyor. Böylece aynı kod hem hoparlöre
-   canlı çalıyor hem de WAV üretirken sessizce dosyaya çalışıyor.
+   SOUND GENERATION
+   Every voice takes the audio context (K) and the destination it
+   should play into. That way the same code plays live to the
+   speakers and renders silently into a file for the WAV export.
    ============================================================ */
-let ctx = null, ana = null;
+let ctx = null, master = null;
 
-function gurultuTamponu(K){
-  if (!K._gurultu){
+function noiseBuffer(K){
+  if (!K._noise){
     const n = K.sampleRate;
     const b = K.createBuffer(1, n, K.sampleRate);
     const d = b.getChannelData(0);
     for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
-    K._gurultu = b;
+    K._noise = b;
   }
-  return K._gurultu;
+  return K._noise;
 }
 
-function gurultu(K, hedef, t, sure, filtreTipi, frk, seviye){
-  const kaynak = K.createBufferSource();
-  kaynak.buffer = gurultuTamponu(K);
-  const filtre = K.createBiquadFilter();
-  filtre.type = filtreTipi; filtre.frequency.value = frk;
+function noise(K, dest, t, dur, filterType, hz, level){
+  const src = K.createBufferSource();
+  src.buffer = noiseBuffer(K);
+  const filter = K.createBiquadFilter();
+  filter.type = filterType; filter.frequency.value = hz;
   const g = K.createGain();
-  g.gain.setValueAtTime(seviye, t);
-  g.gain.exponentialRampToValueAtTime(0.001, t + sure);
-  kaynak.connect(filtre).connect(g).connect(hedef);
-  kaynak.start(t); kaynak.stop(t + sure);
+  g.gain.setValueAtTime(level, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  src.connect(filter).connect(g).connect(dest);
+  src.start(t); src.stop(t + dur);
 }
 
-function ton(K, hedef, t, tip, basFrek, sonFrek, sure, seviye){
+function tone(K, dest, t, type, startHz, endHz, dur, level){
   const o = K.createOscillator();
   const g = K.createGain();
-  o.type = tip;
-  o.frequency.setValueAtTime(basFrek, t);
-  if (sonFrek !== basFrek) o.frequency.exponentialRampToValueAtTime(sonFrek, t + sure);
-  g.gain.setValueAtTime(seviye, t);
-  g.gain.exponentialRampToValueAtTime(0.001, t + sure);
-  o.connect(g).connect(hedef);
-  o.start(t); o.stop(t + sure + 0.02);
+  o.type = type;
+  o.frequency.setValueAtTime(startHz, t);
+  if (endHz !== startHz) o.frequency.exponentialRampToValueAtTime(endHz, t + dur);
+  g.gain.setValueAtTime(level, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g).connect(dest);
+  o.start(t); o.stop(t + dur + 0.02);
 }
 
-/* bas: testere + bir oktav altında sinüs, ikisi de alçak geçiren
-   süzgeçten geçiyor. Süzgeç nota basılınca açılıp hemen kapanıyor —
-   "tuum" dedirten şey bu. */
-function basNotasi(K, hedef, t, frk, sure){
-  const testere = K.createOscillator(); testere.type = 'sawtooth'; testere.frequency.value = frk;
-  const alt     = K.createOscillator(); alt.type = 'sine';         alt.frequency.value = frk / 2;
-  const suzgec  = K.createBiquadFilter();
-  suzgec.type = 'lowpass'; suzgec.Q.value = 7;
-  suzgec.frequency.setValueAtTime(Math.min(frk * 9, 5000), t);
-  suzgec.frequency.exponentialRampToValueAtTime(Math.max(frk * 1.6, 90), t + sure * 0.8);
+/* bass: a sawtooth plus a sine an octave below, both through a
+   lowpass filter. The filter opens as the note hits and closes
+   again straight away — that is what makes it say "doom". */
+function bassNote(K, dest, t, hz, dur){
+  const saw = K.createOscillator(); saw.type = 'sawtooth'; saw.frequency.value = hz;
+  const sub = K.createOscillator(); sub.type = 'sine';     sub.frequency.value = hz / 2;
+  const filter = K.createBiquadFilter();
+  filter.type = 'lowpass'; filter.Q.value = 7;
+  filter.frequency.setValueAtTime(Math.min(hz * 9, 5000), t);
+  filter.frequency.exponentialRampToValueAtTime(Math.max(hz * 1.6, 90), t + dur * 0.8);
   const g = K.createGain();
   g.gain.setValueAtTime(0.0001, t);
   g.gain.exponentialRampToValueAtTime(0.55, t + 0.012);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + sure);
-  testere.connect(suzgec); alt.connect(suzgec);
-  suzgec.connect(g).connect(hedef);
-  testere.start(t); alt.start(t);
-  testere.stop(t + sure + 0.03); alt.stop(t + sure + 0.03);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  saw.connect(filter); sub.connect(filter);
+  filter.connect(g).connect(dest);
+  saw.start(t); sub.start(t);
+  saw.stop(t + dur + 0.03); sub.stop(t + dur + 0.03);
 }
 
-const SESLER = {
-  // 150 Hz'den 45 Hz'e düşen sinüs = bas davulun "bumm"u
-  kick:  (K,h,t) => ton(K,h,t,'sine',150,45,0.40,1.0),
-  // gürültü + altında kısa bir ton = trampet
-  snare: (K,h,t) => { gurultu(K,h,t,0.20,'highpass',1400,0.7); ton(K,h,t,'triangle',190,120,0.12,0.5); },
-  hihat: (K,h,t) => gurultu(K,h,t,0.045,'highpass',7500,0.34),
-  ahihat:(K,h,t) => gurultu(K,h,t,0.34,'highpass',7000,0.28),
-  // arka arkaya üç kısa gürültü = el çırpma hissi
-  clap:  (K,h,t) => [0,0.012,0.026].forEach(g => gurultu(K,h,t+g,0.11,'bandpass',1300,0.55)),
-  tom:   (K,h,t) => ton(K,h,t,'sine',230,90,0.32,0.75),
-  // iki uyumsuz kare dalga = kovboy zili
-  zil:   (K,h,t) => { ton(K,h,t,'square',540,540,0.28,0.20); ton(K,h,t,'square',800,800,0.28,0.20); },
+const VOICES = {
+  // a sine falling from 150 Hz to 45 Hz is the kick drum's "boom"
+  kick:   (K,h,t) => tone(K,h,t,'sine',150,45,0.40,1.0),
+  // noise plus a short tone underneath it = snare
+  snare:  (K,h,t) => { noise(K,h,t,0.20,'highpass',1400,0.7); tone(K,h,t,'triangle',190,120,0.12,0.5); },
+  hihat:  (K,h,t) => noise(K,h,t,0.045,'highpass',7500,0.34),
+  ohihat: (K,h,t) => noise(K,h,t,0.34,'highpass',7000,0.28),
+  // three short noise bursts back to back feel like hands clapping
+  clap:   (K,h,t) => [0,0.012,0.026].forEach(g => noise(K,h,t+g,0.11,'bandpass',1300,0.55)),
+  tom:    (K,h,t) => tone(K,h,t,'sine',230,90,0.32,0.75),
+  // two clashing square waves = cowbell
+  cowbell:(K,h,t) => { tone(K,h,t,'square',540,540,0.28,0.20); tone(K,h,t,'square',800,800,0.28,0.20); },
 };
 
-function sesiKur(){
+function initAudio(){
   if (ctx) return;
   ctx = new (window.AudioContext || window.webkitAudioContext)();
-  ana = ctx.createGain();
-  ana.gain.value = ses.value / 100;
-  ana.connect(ctx.destination);
+  master = ctx.createGain();
+  master.gain.value = volume.value / 100;
+  master.connect(ctx.destination);
 }
 
 /* ============================================================
-   DURUM
+   STATE
    ============================================================ */
-const bosBolum = () => ({
-  desen: ENSTRUMANLAR.map(() => new Array(ADIM_SAYISI).fill(false)),
-  basDesen: new Array(ADIM_SAYISI).fill(0)
+const emptySection = () => ({
+  pattern: INSTRUMENTS.map(() => new Array(STEP_COUNT).fill(false)),
+  bassPattern: new Array(STEP_COUNT).fill(0)
 });
 
-let bolumler   = Array.from({length:BOLUM_SAYISI}, bosBolum);
-let aktifBolum = 0;
-let desen      = bolumler[0].desen;      // düzenlenen bölümün kısayolu
-let basDesen   = bolumler[0].basDesen;
-let dizilim    = [0, null, null, null, null, null, null, null];
-let sarkiModu  = false;
-let susturulan = ENSTRUMANLAR.map(() => false);
-let basSusturuldu = false;
-let kokMidi    = KOK_EN_ALT;
-let diziAdi    = 'minor';
-let secili     = null;    // {tur:'ritim'|'sarki'|'kayit', ...} | null
-let kayitlarim = [];
+let sections      = Array.from({length:SECTION_COUNT}, emptySection);
+let activeSection = 0;
+let pattern       = sections[0].pattern;      // shortcut to the section being edited
+let bassPattern   = sections[0].bassPattern;
+let arrangement   = [0, null, null, null, null, null, null, null];
+let songMode      = false;
+let muted         = INSTRUMENTS.map(() => false);
+let bassMuted     = false;
+let rootMidi      = LOWEST_ROOT;
+let scaleName     = 'minor';
+let selected      = null;    // {type:'pattern'|'song'|'saved', ...} | null
+let savedSongs    = [];
 
-const desenMetne     = d => d.map(s => s.map(v => v ? 'x' : '.').join(''));
-const metinDesene    = m => m.map(s => Array.from({length:ADIM_SAYISI}, (_, i) => s[i] === 'x'));
-const basMetne       = a => a.map(v => v ? String(v) : '.').join('');
-const basMetinDesene = s => Array.from({length:ADIM_SAYISI}, (_, i) => {
+const patternToText     = d => d.map(s => s.map(v => v ? 'x' : '.').join(''));
+const textToPattern     = m => m.map(s => Array.from({length:STEP_COUNT}, (_, i) => s[i] === 'x'));
+const bassToText        = a => a.map(v => v ? String(v) : '.').join('');
+const textToBassPattern = s => Array.from({length:STEP_COUNT}, (_, i) => {
   const n = parseInt((s || '')[i], 10);
-  return (n >= 1 && n <= BAS_DERECE) ? n : 0;
+  return (n >= 1 && n <= BASS_DEGREES) ? n : 0;
 });
-const bolumDolu = b => b.desen.some(s => s.some(Boolean)) || b.basDesen.some(Boolean);
+const sectionHasContent = b => b.pattern.some(s => s.some(Boolean)) || b.bassPattern.some(Boolean);
 
-/* dizinin kaçıncı notası → kaç Hz */
-function derecininFrekansi(derece){
-  return frekans(kokMidi + DIZILER[diziAdi].araliklar[derece - 1]);
+/* which degree of the scale → how many Hz */
+function degreeFreq(degree){
+  return freq(rootMidi + SCALES[scaleName].intervals[degree - 1]);
 }
 
-/* ---- tarayıcıya yazma / okuma ---- */
-function bolumuIsle(){ bolumler[aktifBolum] = { desen, basDesen }; }
+/* ---- reading from / writing to the browser ---- */
+function commitSection(){ sections[activeSection] = { pattern, bassPattern }; }
 
-function kaydet(){
-  bolumuIsle();
+function persist(){
+  commitSection();
   try {
-    localStorage.setItem('ritim-kayit', JSON.stringify({
-      bolumler: bolumler.map(b => ({ satirlar:desenMetne(b.desen), bas:basMetne(b.basDesen) })),
-      dizilim, sarkiModu, aktifBolum, susturulan, basSusturuldu,
-      bpm:bpm.value, swing:swing.value, kokMidi, diziAdi, secili
+    localStorage.setItem('ritim-state', JSON.stringify({
+      sections: sections.map(b => ({ rows:patternToText(b.pattern), bass:bassToText(b.bassPattern) })),
+      arrangement, songMode, activeSection, muted, bassMuted,
+      bpm:bpm.value, swing:swing.value, rootMidi, scaleName, selected
     }));
   } catch(e){}
 }
-function kayitlariYaz(){
-  try { localStorage.setItem('ritim-kayitlarim', JSON.stringify(kayitlarim)); } catch(e){}
+function persistSongs(){
+  try { localStorage.setItem('ritim-songs', JSON.stringify(savedSongs)); } catch(e){}
 }
 
-/* kaydedilmiş bir şarkı nesnesini ekrana kur */
-function sarkiyiKur(s){
-  bolumler = Array.from({length:BOLUM_SAYISI}, (_, i) => {
-    const b = s.bolumler?.[i];
-    return b ? { desen:metinDesene(b.satirlar), basDesen:basMetinDesene(b.bas) } : bosBolum();
+/* older versions wrote Turkish keys; read them so nothing is lost */
+const readSection = b => ({
+  rows: b.rows ?? b.satirlar,
+  bass: b.bass ?? b.bas
+});
+
+/* set a stored song object up on screen */
+function applySong(s){
+  const list = s.sections ?? s.bolumler;
+  sections = Array.from({length:SECTION_COUNT}, (_, i) => {
+    const b = list?.[i];
+    if (!b) return emptySection();
+    const r = readSection(b);
+    return { pattern:textToPattern(r.rows), bassPattern:textToBassPattern(r.bass) };
   });
-  dizilim = dizilimCoz(s.dizilim);
+  arrangement = parseArrangement(s.arrangement ?? s.dizilim);
   bpm.value = s.bpm; swing.value = s.swing;
-  if (Number.isInteger(s.kok)) kokMidi = s.kok;
-  if (DIZILER[s.dizi]) diziAdi = s.dizi;
-  bolumeGec(0, true);
+  const root = s.root ?? s.kok;
+  if (Number.isInteger(root)) rootMidi = root;
+  const scale = s.scale ?? s.dizi;
+  if (SCALES[scale]) scaleName = scale;
+  gotoSection(0, true);
 }
-const dizilimCoz = d => {
-  if (Array.isArray(d)) return d.slice(0, SLOT_SAYISI);
+const parseArrangement = d => {
+  if (Array.isArray(d)) return d.slice(0, SLOT_COUNT);
   const s = String(d || 'A');
-  return Array.from({length:SLOT_SAYISI}, (_, i) => {
-    const k = BOLUM_ADLARI.indexOf(s[i]);
+  return Array.from({length:SLOT_COUNT}, (_, i) => {
+    const k = SECTION_NAMES.indexOf(s[i]);
     return k >= 0 ? k : null;
   });
 };
 
-function yukle(){
-  try { kayitlarim = JSON.parse(localStorage.getItem('ritim-kayitlarim')) || []; } catch(e){ kayitlarim = []; }
-  if (!Array.isArray(kayitlarim)) kayitlarim = [];
-  kayitlariCiz();
+function restore(){
+  try {
+    savedSongs = JSON.parse(localStorage.getItem('ritim-songs')
+                         ?? localStorage.getItem('ritim-kayitlarim')) || [];
+  } catch(e){ savedSongs = []; }
+  if (!Array.isArray(savedSongs)) savedSongs = [];
+  drawSaved();
 
   let k = null;
-  try { k = JSON.parse(localStorage.getItem('ritim-kayit')); } catch(e){}
+  try {
+    k = JSON.parse(localStorage.getItem('ritim-state')
+                ?? localStorage.getItem('ritim-kayit'));
+  } catch(e){}
 
-  if (!k){ ritimYukle(0); return; }                 // ilk açılış → TEMEL
+  if (!k){ loadPattern(0); return; }                 // first visit → BASIC
 
-  if (Array.isArray(k.bolumler)){
-    bolumler = Array.from({length:BOLUM_SAYISI}, (_, i) => {
-      const b = k.bolumler[i];
-      return (b && Array.isArray(b.satirlar) && b.satirlar.length === ENSTRUMANLAR.length)
-        ? { desen:metinDesene(b.satirlar), basDesen:basMetinDesene(b.bas) } : bosBolum();
+  const list = k.sections ?? k.bolumler;
+  const flat = k.pattern ?? k.desen;
+  if (Array.isArray(list)){
+    sections = Array.from({length:SECTION_COUNT}, (_, i) => {
+      const b = list[i];
+      if (!b) return emptySection();
+      const r = readSection(b);
+      return (Array.isArray(r.rows) && r.rows.length === INSTRUMENTS.length)
+        ? { pattern:textToPattern(r.rows), bassPattern:textToBassPattern(r.bass) } : emptySection();
     });
-  } else if (Array.isArray(k.desen) && k.desen.length === ENSTRUMANLAR.length){
-    bolumler = Array.from({length:BOLUM_SAYISI}, bosBolum);   // eski tek desenli kayıt
-    bolumler[0] = { desen:k.desen, basDesen: Array.isArray(k.basDesen) ? k.basDesen : new Array(ADIM_SAYISI).fill(0) };
-  } else { ritimYukle(0); return; }
+  } else if (Array.isArray(flat) && flat.length === INSTRUMENTS.length){
+    sections = Array.from({length:SECTION_COUNT}, emptySection);   // old single-pattern save
+    const flatBass = k.bassPattern ?? k.basDesen;
+    sections[0] = { pattern:flat, bassPattern: Array.isArray(flatBass) ? flatBass : new Array(STEP_COUNT).fill(0) };
+  } else { loadPattern(0); return; }
 
-  dizilim = dizilimCoz(k.dizilim);
-  sarkiModu = !!k.sarkiModu;
-  if (Array.isArray(k.susturulan) && k.susturulan.length === ENSTRUMANLAR.length) susturulan = k.susturulan;
-  basSusturuldu = !!k.basSusturuldu;
+  arrangement = parseArrangement(k.arrangement ?? k.dizilim);
+  songMode = !!(k.songMode ?? k.sarkiModu);
+  const storedMutes = k.muted ?? k.susturulan;
+  if (Array.isArray(storedMutes) && storedMutes.length === INSTRUMENTS.length) muted = storedMutes;
+  bassMuted = !!(k.bassMuted ?? k.basSusturuldu);
   bpm.value = k.bpm; swing.value = k.swing;
-  if (Number.isInteger(k.kokMidi)) kokMidi = k.kokMidi;
-  if (DIZILER[k.diziAdi]) diziAdi = k.diziAdi;
-  secili = (k.secili && typeof k.secili === 'object') ? k.secili : null;
-  bolumeGec(Number.isInteger(k.aktifBolum) ? k.aktifBolum : 0, true);
+  const root = k.rootMidi ?? k.kokMidi;
+  if (Number.isInteger(root)) rootMidi = root;
+  const scale = k.scaleName ?? k.diziAdi;
+  if (SCALES[scale]) scaleName = scale;
+  const sel = k.selected ?? k.secili;
+  selected = (sel && typeof sel === 'object') ? sel : null;
+  const active = k.activeSection ?? k.aktifBolum;
+  gotoSection(Number.isInteger(active) ? active : 0, true);
 }
 
 /* ============================================================
-   ARAYÜZ KURULUMU
+   BUILDING THE UI
    ============================================================ */
-const hucreler = [];
-const basHucreleri = [];
-const numaralar = [];
-const satirlarUI = [];
-const ritimButonlari = [];
-const sarkiButonlari = [];
-const slotlar = [];
-const bolumButonlari = [];
+const cells = [];
+const bassCells = [];
+const numbers = [];
+const rowEls = [];
+const patternBtns = [];
+const songBtns = [];
+const slots = [];
+const sectionBtns = [];
 
-/* adım numaraları — playhead bunların üstünde yürür */
-(function numaraSatiri(){
-  const satir = document.createElement('div');
-  satir.className = 'satir basliklar';
-  const bosluk = document.createElement('div');
-  bosluk.className = 'etiket';
-  satir.appendChild(bosluk);
-  for (let i = 0; i < ADIM_SAYISI; i++){
+/* step numbers — the playhead runs along these */
+(function numberRow(){
+  const row = document.createElement('div');
+  row.className = 'row headers';
+  const spacer = document.createElement('div');
+  spacer.className = 'label';
+  row.appendChild(spacer);
+  for (let i = 0; i < STEP_COUNT; i++){
     const n = document.createElement('div');
-    n.className = 'numara' + (i % 4 === 0 ? ' vurus' : '');
+    n.className = 'num' + (i % 4 === 0 ? ' beat' : '');
     n.textContent = i % 4 === 0 ? (i / 4 + 1) : '·';
-    satir.appendChild(n);
-    numaralar.push(n);
+    row.appendChild(n);
+    numbers.push(n);
   }
-  izgara.appendChild(satir);
+  gridEl.appendChild(row);
 })();
 
-/* davul satırları */
-ENSTRUMANLAR.forEach((ens, satirNo) => {
-  const satir = document.createElement('div');
-  satir.className = 'satir';
+/* drum rows */
+INSTRUMENTS.forEach((inst, rowNo) => {
+  const row = document.createElement('div');
+  row.className = 'row';
 
-  const etiket = document.createElement('div');
-  etiket.className = 'etiket';
-  etiket.title = 'tıkla → sustur / aç';
+  const label = document.createElement('div');
+  label.className = 'label';
+  label.title = 'click → mute / unmute';
 
-  const sil = document.createElement('i');
-  sil.className = 'sil'; sil.textContent = '×'; sil.title = 'satırı temizle';
-  sil.onclick = e => { e.stopPropagation(); desen[satirNo].fill(false); elleDegisti(); };
+  const clear = document.createElement('i');
+  clear.className = 'clear'; clear.textContent = '×'; clear.title = 'clear the row';
+  clear.onclick = e => { e.stopPropagation(); pattern[rowNo].fill(false); editedByHand(); };
 
-  const ad = document.createElement('span');
-  ad.textContent = ens.ad;
+  const name = document.createElement('span');
+  name.textContent = inst.name;
 
-  etiket.append(sil, ad);
-  etiket.onclick = () => {
-    susturulan[satirNo] = !susturulan[satirNo];
-    satir.classList.toggle('susturuldu', susturulan[satirNo]);
-    kaydet();
+  label.append(clear, name);
+  label.onclick = () => {
+    muted[rowNo] = !muted[rowNo];
+    row.classList.toggle('muted', muted[rowNo]);
+    persist();
   };
-  satir.appendChild(etiket);
+  row.appendChild(label);
 
-  const satirHucreleri = [];
-  for (let i = 0; i < ADIM_SAYISI; i++){
+  const rowCells = [];
+  for (let i = 0; i < STEP_COUNT; i++){
     const h = document.createElement('div');
-    h.className = 'adim';
-    h.style.setProperty('--r', ens.renk);
+    h.className = 'step';
+    h.style.setProperty('--r', inst.colour);
     h.onclick = () => {
-      desen[satirNo][i] = !desen[satirNo][i];
-      if (desen[satirNo][i] && ctx) SESLER[ens.anahtar](ctx, ana, ctx.currentTime); // dinleyerek seç
-      elleDegisti();
+      pattern[rowNo][i] = !pattern[rowNo][i];
+      if (pattern[rowNo][i] && ctx) VOICES[inst.key](ctx, master, ctx.currentTime); // hear it as you place it
+      editedByHand();
     };
-    satir.appendChild(h);
-    satirHucreleri.push(h);
+    row.appendChild(h);
+    rowCells.push(h);
   }
-  hucreler.push(satirHucreleri);
-  satirlarUI.push(satir);
-  izgara.appendChild(satir);
+  cells.push(rowCells);
+  rowEls.push(row);
+  gridEl.appendChild(row);
 });
 
-/* bas ızgarası — üstte oktav, altta kök (piyano rulosu gibi) */
-for (let derece = BAS_DERECE; derece >= 1; derece--){
-  const satir = document.createElement('div');
-  satir.className = 'satir';
+/* bass grid — octave on top, root at the bottom (like a piano roll) */
+for (let degree = BASS_DEGREES; degree >= 1; degree--){
+  const row = document.createElement('div');
+  row.className = 'row';
 
-  const etiket = document.createElement('div');
-  etiket.className = 'basEtiket' + (derece === 1 || derece === BAS_DERECE ? ' kok' : '');
-  const no = document.createElement('span');
-  no.className = 'derece'; no.textContent = derece;
-  const nota = document.createElement('span');
-  nota.dataset.derece = derece;
-  etiket.append(no, nota);
-  satir.appendChild(etiket);
+  const label = document.createElement('div');
+  label.className = 'bassLabel' + (degree === 1 || degree === BASS_DEGREES ? ' root' : '');
+  const degEl = document.createElement('span');
+  degEl.className = 'degree'; degEl.textContent = degree;
+  const note = document.createElement('span');
+  note.dataset.degree = degree;
+  label.append(degEl, note);
+  row.appendChild(label);
 
-  const satirHucreleri = [];
-  for (let i = 0; i < ADIM_SAYISI; i++){
+  const rowCells = [];
+  for (let i = 0; i < STEP_COUNT; i++){
     const h = document.createElement('div');
-    h.className = 'adim';
-    h.style.setProperty('--r', 'var(--bas)');
+    h.className = 'step';
+    h.style.setProperty('--r', 'var(--bass)');
     h.onclick = () => {
-      basDesen[i] = (basDesen[i] === derece) ? 0 : derece;   // tek sesli: sütunda tek nota
-      if (basDesen[i] && ctx) basNotasi(ctx, ana, ctx.currentTime, derecininFrekansi(derece), 0.28);
-      elleDegisti();
+      bassPattern[i] = (bassPattern[i] === degree) ? 0 : degree;   // monophonic: one note per column
+      if (bassPattern[i] && ctx) bassNote(ctx, master, ctx.currentTime, degreeFreq(degree), 0.28);
+      editedByHand();
     };
-    satir.appendChild(h);
-    satirHucreleri.push(h);
+    row.appendChild(h);
+    rowCells.push(h);
   }
-  basHucreleri.push(satirHucreleri);        // [0] = en üst satır = en yüksek derece
-  basIzgaraEl.appendChild(satir);
+  bassCells.push(rowCells);        // [0] = top row = highest degree
+  bassGridEl.appendChild(row);
 }
 
-/* kök ve dizi seçicileri */
-for (let m = KOK_EN_ALT; m < KOK_EN_ALT + 12; m++){
+/* root and scale pickers */
+for (let m = LOWEST_ROOT; m < LOWEST_ROOT + 12; m++){
   const o = document.createElement('option');
-  o.value = m; o.textContent = notaAdi(m);
-  kokSec.appendChild(o);
+  o.value = m; o.textContent = noteName(m);
+  rootSel.appendChild(o);
 }
-Object.entries(DIZILER).forEach(([anahtar, d]) => {
+Object.entries(SCALES).forEach(([key, d]) => {
   const o = document.createElement('option');
-  o.value = anahtar; o.textContent = d.ad;
-  diziSec.appendChild(o);
+  o.value = key; o.textContent = d.name;
+  scaleSel.appendChild(o);
 });
 
-/* hazır ritimler */
-let sira = 0;
-GRUPLAR.forEach(g => {
-  const satir = document.createElement('div');
-  satir.className = 'grup';
-  const ad = document.createElement('div');
-  ad.className = 'grupAd'; ad.textContent = g.grup;
-  satir.appendChild(ad);
+/* preset patterns */
+let idx = 0;
+PATTERN_GROUPS.forEach(g => {
+  const row = document.createElement('div');
+  row.className = 'group';
+  const name = document.createElement('div');
+  name.className = 'groupName'; name.textContent = g.group;
+  row.appendChild(name);
 
-  g.ritimler.forEach(r => {
-    const no = sira++;
+  g.patterns.forEach(p => {
+    const no = idx++;
     const b = document.createElement('button');
-    b.textContent = r.ad;
-    b.title = r.bpm + ' BPM' + (r.swing ? ' · swing %' + r.swing : '')
-            + (r.dizi ? ' · ' + DIZILER[r.dizi].ad : '');
-    b.onclick = () => ritimYukle(no);
-    satir.appendChild(b);
-    ritimButonlari.push(b);
+    b.textContent = p.name;
+    b.title = p.bpm + ' BPM' + (p.swing ? ' · swing ' + p.swing + '%' : '')
+            + (p.scale ? ' · ' + SCALES[p.scale].name : '');
+    b.onclick = () => loadPattern(no);
+    row.appendChild(b);
+    patternBtns.push(b);
   });
-  ritimlerEl.appendChild(satir);
+  patternsEl.appendChild(row);
 });
 
-/* hazır şarkılar */
-SARKILAR.forEach((s, no) => {
+/* demo songs */
+SONGS.forEach((s, no) => {
   const b = document.createElement('button');
-  b.textContent = s.ad;
-  b.title = `${s.bpm} BPM · ${DIZILER[s.dizi].ad} · dizilim ${s.dizilim}`;
-  b.onclick = () => sarkiYukle(no);
-  sarkilarEl.appendChild(b);
-  sarkiButonlari.push(b);
+  b.textContent = s.name;
+  b.title = `${s.bpm} BPM · ${SCALES[s.scale].name} · arrangement ${s.arrangement}`;
+  b.onclick = () => loadSong(no);
+  songsEl.appendChild(b);
+  songBtns.push(b);
 });
 
-/* bölüm düğmeleri A B C D */
-BOLUM_ADLARI.forEach((ad, no) => {
+/* section buttons A B C D */
+SECTION_NAMES.forEach((name, no) => {
   const b = document.createElement('button');
-  b.className = 'bolumBtn';
-  b.style.setProperty('--h', `var(--${ad})`);
-  b.textContent = ad;
-  const nokta = document.createElement('span');
-  nokta.className = 'nokta';
-  b.appendChild(nokta);
-  b.onclick = () => bolumeGec(no);
-  bolumlerUI.appendChild(b);
-  bolumButonlari.push(b);
+  b.className = 'sectionBtn';
+  b.style.setProperty('--h', `var(--${name})`);
+  b.textContent = name;
+  const dot = document.createElement('span');
+  dot.className = 'dot';
+  b.appendChild(dot);
+  b.onclick = () => gotoSection(no);
+  sectionsUI.appendChild(b);
+  sectionBtns.push(b);
 });
 
-/* dizilim kutuları */
-for (let i = 0; i < SLOT_SAYISI; i++){
+/* arrangement slots */
+for (let i = 0; i < SLOT_COUNT; i++){
   const b = document.createElement('button');
   b.className = 'slot';
   b.onclick = () => {
-    const su = dizilim[i];
-    dizilim[i] = (su === null) ? 0 : (su + 1 >= BOLUM_SAYISI ? null : su + 1);
-    dizilimiTazele(); kaydet();
+    const cur = arrangement[i];
+    arrangement[i] = (cur === null) ? 0 : (cur + 1 >= SECTION_COUNT ? null : cur + 1);
+    refreshArrangement(); persist();
   };
-  dizilimUI.appendChild(b);
-  slotlar.push(b);
+  arrangeUI.appendChild(b);
+  slots.push(b);
 }
 
 /* ============================================================
-   TAZELEME
+   REFRESHING
    ============================================================ */
-function ekraniTazele(){
-  desen.forEach((satir, s) =>
-    satir.forEach((acik, i) => hucreler[s][i].classList.toggle('acik', acik)));
-  satirlarUI.forEach((s, i) => s.classList.toggle('susturuldu', susturulan[i]));
+function refreshGrid(){
+  pattern.forEach((row, s) =>
+    row.forEach((on, i) => cells[s][i].classList.toggle('active', on)));
+  rowEls.forEach((s, i) => s.classList.toggle('muted', muted[i]));
 
-  basHucreleri.forEach((satir, r) => {
-    const derece = BAS_DERECE - r;
-    satir.forEach((h, i) => h.classList.toggle('acik', basDesen[i] === derece));
+  bassCells.forEach((row, r) => {
+    const degree = BASS_DEGREES - r;
+    row.forEach((h, i) => h.classList.toggle('active', bassPattern[i] === degree));
   });
-  basIzgaraEl.classList.toggle('susturuldu', basSusturuldu);
-  document.getElementById('basSustur').classList.toggle('acik', basSusturuldu);
+  bassGridEl.classList.toggle('muted', bassMuted);
+  document.getElementById('bassMute').classList.toggle('active', bassMuted);
 
-  bolumButonlari.forEach((b, i) => {
-    b.classList.toggle('secili', i === aktifBolum);
-    b.classList.toggle('doluBolum', bolumDolu(i === aktifBolum ? { desen, basDesen } : bolumler[i]));
-  });
-}
-
-function dizilimiTazele(){
-  slotlar.forEach((b, i) => {
-    const v = dizilim[i];
-    b.textContent = v === null ? '·' : BOLUM_ADLARI[v];
-    b.classList.toggle('dolu', v !== null);
-    if (v !== null) b.style.setProperty('--h', `var(--${BOLUM_ADLARI[v]})`);
-  });
-  modDongu.classList.toggle('secili', !sarkiModu);
-  modSarki.classList.toggle('secili', sarkiModu);
-  modIpucu.textContent = sarkiModu
-    ? 'dizilimi baştan sona çalar'
-    : 'seçili bölüm döner durur';
-}
-
-function notaAdlariniTazele(){
-  basIzgaraEl.querySelectorAll('[data-derece]').forEach(el => {
-    const d = Number(el.dataset.derece);
-    el.textContent = notaAdi(kokMidi + DIZILER[diziAdi].araliklar[d - 1]);
+  sectionBtns.forEach((b, i) => {
+    b.classList.toggle('selected', i === activeSection);
+    b.classList.toggle('hasContent', sectionHasContent(i === activeSection ? { pattern, bassPattern } : sections[i]));
   });
 }
 
-function yazilariTazele(){
-  document.getElementById('bpmYazi').textContent   = bpm.value;
-  document.getElementById('swingYazi').textContent = swing.value + '%';
-  document.getElementById('sesYazi').textContent   = ses.value;
-  kokSec.value = kokMidi;
-  diziSec.value = diziAdi;
-  notaAdlariniTazele();
-
-  let ad = 'kendi ritmin';
-  if (secili?.tur === 'ritim') ad = TUM_RITIMLER[secili.no].ad;
-  else if (secili?.tur === 'sarki') ad = SARKILAR[secili.no].ad;
-  else if (secili?.tur === 'kayit') ad = secili.ad;
-  durumEl.innerHTML = `<b>${ad}</b> · ${bpm.value} BPM · `
-    + `${notaAdi(kokMidi).replace(/\d/,'')} ${DIZILER[diziAdi].ad} · Bölüm ${BOLUM_ADLARI[aktifBolum]}`;
+function refreshArrangement(){
+  slots.forEach((b, i) => {
+    const v = arrangement[i];
+    b.textContent = v === null ? '·' : SECTION_NAMES[v];
+    b.classList.toggle('filled', v !== null);
+    if (v !== null) b.style.setProperty('--h', `var(--${SECTION_NAMES[v]})`);
+  });
+  modeLoop.classList.toggle('selected', !songMode);
+  modeSong.classList.toggle('selected', songMode);
+  modeHint.textContent = songMode
+    ? 'plays the arrangement start to finish'
+    : 'the selected section loops forever';
 }
 
-function butonlariTazele(){
-  ritimButonlari.forEach((b, i) => b.classList.toggle('secili', secili?.tur === 'ritim' && secili.no === i));
-  sarkiButonlari.forEach((b, i) => b.classList.toggle('secili', secili?.tur === 'sarki' && secili.no === i));
-  [...kayitlarEl.children].forEach(c =>
-    c.classList.toggle('secili', secili?.tur === 'kayit' && secili.ad === c.dataset.ad));
-}
-function hepsiniTazele(){ yazilariTazele(); butonlariTazele(); dizilimiTazele(); ekraniTazele(); }
-
-function bolumeGec(no, sessiz){
-  if (!sessiz) bolumuIsle();
-  aktifBolum = no;
-  desen = bolumler[no].desen;
-  basDesen = bolumler[no].basDesen;
-  hepsiniTazele();
-  if (!sessiz) kaydet();
+function refreshNoteNames(){
+  bassGridEl.querySelectorAll('[data-degree]').forEach(el => {
+    const d = Number(el.dataset.degree);
+    el.textContent = noteName(rootMidi + SCALES[scaleName].intervals[d - 1]);
+  });
 }
 
-/* hazır ritim → seçili bölüme yüklenir */
-function ritimYukle(no){
-  const r = TUM_RITIMLER[no];
-  desen = metinDesene(r.satirlar);
-  basDesen = basMetinDesene(r.bas);
-  bolumler[aktifBolum] = { desen, basDesen };
-  bpm.value = r.bpm;
-  swing.value = r.swing;
-  if (r.dizi && DIZILER[r.dizi]) diziAdi = r.dizi;
-  secili = { tur:'ritim', no };
-  hepsiniTazele(); kaydet();
+function refreshLabels(){
+  document.getElementById('bpmVal').textContent   = bpm.value;
+  document.getElementById('swingVal').textContent = swing.value + '%';
+  document.getElementById('volVal').textContent   = volume.value;
+  rootSel.value = rootMidi;
+  scaleSel.value = scaleName;
+  refreshNoteNames();
+
+  let label = 'your own pattern';
+  if (selected?.type === 'pattern') label = ALL_PATTERNS[selected.no].name;
+  else if (selected?.type === 'song') label = SONGS[selected.no].name;
+  else if (selected?.type === 'saved') label = selected.name;
+  statusEl.innerHTML = `<b>${label}</b> · ${bpm.value} BPM · `
+    + `${noteName(rootMidi).replace(/\d/,'')} ${SCALES[scaleName].name} · Section ${SECTION_NAMES[activeSection]}`;
 }
 
-/* hazır şarkı → dört bölüm + dizilim birden gelir */
-function sarkiYukle(no){
-  sarkiyiKur(SARKILAR[no]);
-  sarkiModu = true;
-  secili = { tur:'sarki', no };
-  hepsiniTazele(); kaydet();
-  bildir(`"${SARKILAR[no].ad}" yüklendi — ÇAL'a bas`);
+function refreshButtons(){
+  patternBtns.forEach((b, i) => b.classList.toggle('selected', selected?.type === 'pattern' && selected.no === i));
+  songBtns.forEach((b, i) => b.classList.toggle('selected', selected?.type === 'song' && selected.no === i));
+  [...savedEl.children].forEach(c =>
+    c.classList.toggle('selected', selected?.type === 'saved' && selected.name === c.dataset.name));
+}
+function refreshAll(){ refreshLabels(); refreshButtons(); refreshArrangement(); refreshGrid(); }
+
+function gotoSection(no, silent){
+  if (!silent) commitSection();
+  activeSection = no;
+  pattern = sections[no].pattern;
+  bassPattern = sections[no].bassPattern;
+  refreshAll();
+  if (!silent) persist();
 }
 
-/* kullanıcı kutulara dokununca artık hazır bir şey sayılmaz */
-function elleDegisti(){
-  secili = null;
-  hepsiniTazele(); kaydet();
+/* preset pattern → loaded into the selected section */
+function loadPattern(no){
+  const p = ALL_PATTERNS[no];
+  pattern = textToPattern(p.rows);
+  bassPattern = textToBassPattern(p.bass);
+  sections[activeSection] = { pattern, bassPattern };
+  bpm.value = p.bpm;
+  swing.value = p.swing;
+  if (p.scale && SCALES[p.scale]) scaleName = p.scale;
+  selected = { type:'pattern', no };
+  refreshAll(); persist();
+}
+
+/* demo song → all four sections plus the arrangement at once */
+function loadSong(no){
+  applySong(SONGS[no]);
+  songMode = true;
+  selected = { type:'song', no };
+  refreshAll(); persist();
+  notify(`"${SONGS[no].name}" loaded — hit PLAY`);
+}
+
+/* once the user touches the cells it is no longer a preset */
+function editedByHand(){
+  selected = null;
+  refreshAll(); persist();
 }
 
 /* ============================================================
-   KENDİ ŞARKILARIN
+   YOUR OWN SONGS
    ============================================================ */
-function kayitlariCiz(){
-  kayitlarEl.textContent = '';
-  kayitYokEl.style.display = kayitlarim.length ? 'none' : '';
+function drawSaved(){
+  savedEl.textContent = '';
+  noSavedEl.style.display = savedSongs.length ? 'none' : '';
 
-  kayitlarim.forEach(k => {
+  savedSongs.forEach(k => {
     const c = document.createElement('span');
-    c.className = 'kayit';
-    c.dataset.ad = k.ad;
+    c.className = 'saved';
+    c.dataset.name = k.name;
 
-    const ad = document.createElement('b');
-    ad.textContent = k.ad;
-    ad.title = k.bpm + ' BPM' + (DIZILER[k.dizi] ? ' · ' + DIZILER[k.dizi].ad : '')
-             + (k.dizilim ? ' · dizilim ' + (Array.isArray(k.dizilim)
-                 ? k.dizilim.map(v => v === null ? '-' : BOLUM_ADLARI[v]).join('') : k.dizilim) : '');
-    ad.onclick = () => kayitYukle(k.ad);
+    const name = document.createElement('b');
+    name.textContent = k.name;
+    name.title = k.bpm + ' BPM' + (SCALES[k.scale] ? ' · ' + SCALES[k.scale].name : '')
+             + (k.arrangement ? ' · arrangement ' + (Array.isArray(k.arrangement)
+                 ? k.arrangement.map(v => v === null ? '-' : SECTION_NAMES[v]).join('') : k.arrangement) : '');
+    name.onclick = () => loadSaved(k.name);
 
-    const sil = document.createElement('i');
-    sil.textContent = '×'; sil.title = 'sil';
-    sil.onclick = e => {
+    const del = document.createElement('i');
+    del.textContent = '×'; del.title = 'delete';
+    del.onclick = e => {
       e.stopPropagation();
-      if (c.classList.contains('onay')){                 // ikinci tık → gerçekten sil
-        kayitlarim = kayitlarim.filter(x => x.ad !== k.ad);
-        if (secili?.tur === 'kayit' && secili.ad === k.ad) secili = null;
-        kayitlariYaz(); kayitlariCiz(); yazilariTazele(); kaydet();
-        bildir(`"${k.ad}" silindi`);
+      if (c.classList.contains('confirm')){                 // second click → actually delete
+        savedSongs = savedSongs.filter(x => x.name !== k.name);
+        if (selected?.type === 'saved' && selected.name === k.name) selected = null;
+        persistSongs(); drawSaved(); refreshLabels(); persist();
+        notify(`"${k.name}" deleted`);
       } else {
-        onaylariKapat();                                 // ilk tık → "emin misin"
-        c.classList.add('onay');
-        ad.dataset.eski = ad.textContent;
-        ad.textContent = 'SİLİNSİN Mİ?';
+        clearConfirms();                                    // first click → "are you sure"
+        c.classList.add('confirm');
+        name.dataset.old = name.textContent;
+        name.textContent = 'DELETE IT?';
       }
     };
 
-    c.append(ad, sil);
-    kayitlarEl.appendChild(c);
+    c.append(name, del);
+    savedEl.appendChild(c);
   });
-  butonlariTazele();
+  refreshButtons();
 }
 
-function onaylariKapat(){
-  [...kayitlarEl.children].forEach(c => {
-    if (c.classList.contains('onay')){
-      c.classList.remove('onay');
+function clearConfirms(){
+  [...savedEl.children].forEach(c => {
+    if (c.classList.contains('confirm')){
+      c.classList.remove('confirm');
       const b = c.querySelector('b');
-      if (b.dataset.eski) b.textContent = b.dataset.eski;
+      if (b.dataset.old) b.textContent = b.dataset.old;
     }
   });
 }
-document.addEventListener('click', onaylariKapat);
+document.addEventListener('click', clearConfirms);
 
-function kayitYukle(ad){
-  const k = kayitlarim.find(x => x.ad === ad);
+function loadSaved(name){
+  const k = savedSongs.find(x => x.name === name);
   if (!k) return;
-  sarkiyiKur(k);
-  sarkiModu = !!k.sarkiModu;
-  secili = { tur:'kayit', ad };
-  hepsiniTazele(); kaydet();
+  applySong(k);
+  songMode = !!(k.songMode ?? k.sarkiModu);
+  selected = { type:'saved', name };
+  refreshAll(); persist();
 }
 
-document.getElementById('kaydetBtn').onclick = kaydetmeyiCalistir;
-kayitAdiEl.addEventListener('keydown', e => { if (e.key === 'Enter') kaydetmeyiCalistir(); });
+document.getElementById('saveBtn').onclick = doSave;
+saveNameEl.addEventListener('keydown', e => { if (e.key === 'Enter') doSave(); });
 
-function kaydetmeyiCalistir(){
-  const ad = kayitAdiEl.value.trim();
-  if (!ad){ bildir('Önce bir ad yaz', 'hata'); kayitAdiEl.focus(); return; }
-  bolumuIsle();
-  if (!bolumler.some(bolumDolu)){ bildir('Her yer boş — önce bir şeyler doldur', 'hata'); return; }
+function doSave(){
+  const name = saveNameEl.value.trim();
+  if (!name){ notify('Type a name first', 'error'); saveNameEl.focus(); return; }
+  commitSection();
+  if (!sections.some(sectionHasContent)){ notify('Everything is empty — fill something in first', 'error'); return; }
 
-  const yeni = {
-    ad, bpm:Number(bpm.value), swing:Number(swing.value), kok:kokMidi, dizi:diziAdi,
-    bolumler: bolumler.map(b => ({ satirlar:desenMetne(b.desen), bas:basMetne(b.basDesen) })),
-    dizilim: dizilim.slice(), sarkiModu
+  const entry = {
+    name, bpm:Number(bpm.value), swing:Number(swing.value), root:rootMidi, scale:scaleName,
+    sections: sections.map(b => ({ rows:patternToText(b.pattern), bass:bassToText(b.bassPattern) })),
+    arrangement: arrangement.slice(), songMode
   };
-  const varOlan = kayitlarim.findIndex(x => x.ad === ad);
-  if (varOlan >= 0){ kayitlarim[varOlan] = yeni; bildir(`"${ad}" güncellendi`); }
-  else { kayitlarim.push(yeni); bildir(`"${ad}" kaydedildi`); }
+  const existing = savedSongs.findIndex(x => x.name === name);
+  if (existing >= 0){ savedSongs[existing] = entry; notify(`"${name}" updated`); }
+  else { savedSongs.push(entry); notify(`"${name}" saved`); }
 
-  secili = { tur:'kayit', ad };
-  kayitAdiEl.value = '';
-  kayitlariYaz(); kayitlariCiz(); yazilariTazele(); kaydet();
+  selected = { type:'saved', name };
+  saveNameEl.value = '';
+  persistSongs(); drawSaved(); refreshLabels(); persist();
 }
 
-/* ---- yedek al / yükle ---- */
-document.getElementById('yedekAl').onclick = () => {
-  if (!kayitlarim.length){ bildir('Yedeklenecek kayıt yok', 'hata'); return; }
-  const veri = JSON.stringify({ uygulama:'ritim', surum:3, kayitlar:kayitlarim }, null, 2);
-  dosyayaIndir(new Blob([veri], {type:'application/json'}), 'ritim-yedek.json');
-  bildir(`${kayitlarim.length} kayıt dosyaya yazıldı`);
+/* ---- export / import a backup ---- */
+document.getElementById('backupBtn').onclick = () => {
+  if (!savedSongs.length){ notify('There is nothing to back up', 'error'); return; }
+  const data = JSON.stringify({ app:'ritim', version:3, songs:savedSongs }, null, 2);
+  downloadFile(new Blob([data], {type:'application/json'}), 'ritim-backup.json');
+  notify(`${savedSongs.length} songs written to a file`);
 };
 
-const dosya = document.getElementById('dosya');
-document.getElementById('yedekYukle').onclick = () => dosya.click();
-dosya.onchange = () => {
-  const f = dosya.files[0];
+const fileInput = document.getElementById('fileInput');
+document.getElementById('restoreBtn').onclick = () => fileInput.click();
+fileInput.onchange = () => {
+  const f = fileInput.files[0];
   if (!f) return;
-  const okuyucu = new FileReader();
-  okuyucu.onload = () => {
+  const reader = new FileReader();
+  reader.onload = () => {
     try {
-      const veri = JSON.parse(okuyucu.result);
-      const gelenler = Array.isArray(veri) ? veri : veri.kayitlar;
-      if (!Array.isArray(gelenler)) throw new Error('biçim');
-      let eklenen = 0, guncellenen = 0;
-      gelenler.forEach(k => {
-        if (!k || typeof k.ad !== 'string') return;
-        // eski sürüm tek desenliydi; onu A bölümüne koyuyoruz
-        const bols = Array.isArray(k.bolumler) ? k.bolumler
-                   : (Array.isArray(k.satirlar) ? [{ satirlar:k.satirlar, bas:k.bas }] : null);
-        if (!bols) return;
-        const temiz = {
-          ad: k.ad,
+      const data = JSON.parse(reader.result);
+      const incoming = Array.isArray(data) ? data : (data.songs ?? data.kayitlar);
+      if (!Array.isArray(incoming)) throw new Error('format');
+      let added = 0, updated = 0;
+      incoming.forEach(k => {
+        const name = k?.name ?? k?.ad;
+        if (typeof name !== 'string') return;
+        // the old format held a single pattern; that goes into section A
+        const list = k.sections ?? k.bolumler;
+        const flatRows = k.rows ?? k.satirlar;
+        const secs = Array.isArray(list) ? list
+                   : (Array.isArray(flatRows) ? [{ rows:flatRows, bass:k.bass ?? k.bas }] : null);
+        if (!secs) return;
+        const clean = {
+          name,
           bpm: Number(k.bpm) || 96,
           swing: Number(k.swing) || 0,
-          kok: Number.isInteger(k.kok) ? k.kok : KOK_EN_ALT,
-          dizi: DIZILER[k.dizi] ? k.dizi : 'minor',
-          bolumler: Array.from({length:BOLUM_SAYISI}, (_, i) => {
-            const b = bols[i];
-            if (!b || !Array.isArray(b.satirlar)) return { satirlar:Array(ENSTRUMANLAR.length).fill(BOS), bas:BOS };
+          root: Number.isInteger(k.root ?? k.kok) ? (k.root ?? k.kok) : LOWEST_ROOT,
+          scale: SCALES[k.scale ?? k.dizi] ? (k.scale ?? k.dizi) : 'minor',
+          sections: Array.from({length:SECTION_COUNT}, (_, i) => {
+            const b = secs[i];
+            if (!b) return { rows:Array(INSTRUMENTS.length).fill(EMPTY), bass:EMPTY };
+            const r = readSection(b);
+            if (!Array.isArray(r.rows)) return { rows:Array(INSTRUMENTS.length).fill(EMPTY), bass:EMPTY };
             return {
-              satirlar: Array.from({length:ENSTRUMANLAR.length}, (_, j) =>
-                String(b.satirlar[j] ?? BOS).padEnd(ADIM_SAYISI,'.').slice(0, ADIM_SAYISI)),
-              bas: String(b.bas || '').padEnd(ADIM_SAYISI,'.').slice(0, ADIM_SAYISI)
+              rows: Array.from({length:INSTRUMENTS.length}, (_, j) =>
+                String(r.rows[j] ?? EMPTY).padEnd(STEP_COUNT,'.').slice(0, STEP_COUNT)),
+              bass: String(r.bass || '').padEnd(STEP_COUNT,'.').slice(0, STEP_COUNT)
             };
           }),
-          dizilim: dizilimCoz(k.dizilim ?? 'A'),
-          sarkiModu: !!k.sarkiModu
+          arrangement: parseArrangement(k.arrangement ?? k.dizilim ?? 'A'),
+          songMode: !!(k.songMode ?? k.sarkiModu)
         };
-        const i = kayitlarim.findIndex(x => x.ad === k.ad);
-        if (i >= 0){ kayitlarim[i] = temiz; guncellenen++; } else { kayitlarim.push(temiz); eklenen++; }
+        const i = savedSongs.findIndex(x => x.name === name);
+        if (i >= 0){ savedSongs[i] = clean; updated++; } else { savedSongs.push(clean); added++; }
       });
-      if (!eklenen && !guncellenen) throw new Error('boş');
-      kayitlariYaz(); kayitlariCiz();
-      bildir(`${eklenen} yeni, ${guncellenen} güncellenen kayıt yüklendi`);
+      if (!added && !updated) throw new Error('empty');
+      persistSongs(); drawSaved();
+      notify(`${added} new and ${updated} updated songs loaded`);
     } catch(e){
-      bildir('Dosya okunamadı — bu bir ritim yedeği değil gibi', 'hata');
+      notify('Could not read the file — this does not look like a ritim backup', 'error');
     }
-    dosya.value = '';
+    fileInput.value = '';
   };
-  okuyucu.readAsText(f);
+  reader.readAsText(f);
 };
 
-/* dosya adında Türkçe harf bırakmıyoruz — telefonda/başka işletim
-   sisteminde bozuk görünmesin diye karşılıklarına çeviriyoruz */
-function ingilizceHarfe(metin){
-  const harita = { ç:'c', Ç:'c', ğ:'g', Ğ:'g', ı:'i', İ:'i', ö:'o', Ö:'o', ş:'s', Ş:'s', ü:'u', Ü:'u' };
-  return metin.replace(/[çÇğĞıİöÖşŞüÜ]/g, h => harita[h])
-              .toLowerCase()
-              .replace(/[^a-z0-9]+/g, '-')
-              .replace(/^-+|-+$/g, '') || 'ritim';
+/* keep non-ASCII letters out of file names so they do not come out
+   broken on a phone or on another operating system */
+function toAsciiName(text){
+  const map = { ç:'c', Ç:'c', ğ:'g', Ğ:'g', ı:'i', İ:'i', ö:'o', Ö:'o', ş:'s', Ş:'s', ü:'u', Ü:'u' };
+  return text.replace(/[çÇğĞıİöÖşŞüÜ]/g, h => map[h])
+             .toLowerCase()
+             .replace(/[^a-z0-9]+/g, '-')
+             .replace(/^-+|-+$/g, '') || 'ritim';
 }
 
-function dosyayaIndir(blob, ad){
+function downloadFile(blob, name){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = ad;
+  a.href = url; a.download = name;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /* ============================================================
-   ZAMANLAYICI
-   Notaları setInterval ile *çalmıyoruz* — setInterval hassas değil,
-   ritim tökezler. Onun yerine her 25 ms'de bir "önümüzdeki 100 ms
-   içinde ne çalacak" diye bakıp sesleri ses kartının kendi saatine
-   önceden randevu veriyoruz. Ritmin sıkı durmasının sebebi bu.
+   SCHEDULER
+   Notes are *not* played straight from setInterval — its timing is
+   not precise enough and the beat stumbles. Instead, every 25 ms we
+   ask "what plays in the next 100 ms" and book those sounds against
+   the sound card's own clock in advance. That is why the beat is tight.
    ============================================================ */
-const BAKIS = 25;        // ms — ne sıklıkla kontrol edilecek
-const PENCERE = 0.10;    // sn — ne kadar ileriye randevu verilecek
+const LOOKAHEAD_MS  = 25;     // ms — how often we check
+const SCHEDULE_AHEAD = 0.10;  // s — how far ahead we book
 
-let calisiyor = false, zamanlayici = null;
-let siradakiZaman = 0, siradakiAdim = 0, calanSlot = 0;
-let kuyruk = [];
+let playing = false, timer = null;
+let nextTime = 0, nextStep = 0, playingSlot = 0;
+let queue = [];
 
-const doluSlotlar = () => dizilim.map((v, i) => v === null ? -1 : i).filter(i => i >= 0);
+const filledSlots = () => arrangement.map((v, i) => v === null ? -1 : i).filter(i => i >= 0);
 
-function siradakiDoluSlot(su){
-  const dolu = doluSlotlar();
-  if (!dolu.length) return su;
-  const k = dolu.indexOf(su);
-  return dolu[(k + 1) % dolu.length];
+function nextFilledSlot(cur){
+  const filled = filledSlots();
+  if (!filled.length) return cur;
+  const k = filled.indexOf(cur);
+  return filled[(k + 1) % filled.length];
 }
 
-/* o an çalınması gereken bölüm */
-function calanKaynak(){
-  if (!sarkiModu) return { desen, basDesen };
-  const b = dizilim[calanSlot];
-  return b === null ? { desen, basDesen } : bolumler[b];
+/* the section that should be playing right now */
+function currentSource(){
+  if (!songMode) return { pattern, bassPattern };
+  const b = arrangement[playingSlot];
+  return b === null ? { pattern, bassPattern } : sections[b];
 }
 
-function bir16lik(){
-  const s16 = 60.0 / bpmDegeri() / 4;
+function advanceStep(){
+  const s16 = 60.0 / bpmValue() / 4;
   const sw = swing.value / 100;
-  // swing: çift adımlar biraz uzar, tek adımlar aynı miktarda kısalır
-  siradakiZaman += (siradakiAdim % 2 === 0) ? s16 * (1 + sw) : s16 * (1 - sw);
-  siradakiAdim = (siradakiAdim + 1) % ADIM_SAYISI;
-  if (siradakiAdim === 0 && sarkiModu) calanSlot = siradakiDoluSlot(calanSlot);
+  // swing: even steps get longer, odd steps get shorter by the same amount
+  nextTime += (nextStep % 2 === 0) ? s16 * (1 + sw) : s16 * (1 - sw);
+  nextStep = (nextStep + 1) % STEP_COUNT;
+  if (nextStep === 0 && songMode) playingSlot = nextFilledSlot(playingSlot);
 }
 
-function randevuVer(adim, zaman){
-  const kaynak = calanKaynak();
-  const s16 = 60 / bpmDegeri() / 4;
-  ENSTRUMANLAR.forEach((ens, s) => {
-    if (kaynak.desen[s][adim] && !susturulan[s]) SESLER[ens.anahtar](ctx, ana, zaman);
+function scheduleStep(step, time){
+  const source = currentSource();
+  const s16 = 60 / bpmValue() / 4;
+  INSTRUMENTS.forEach((inst, s) => {
+    if (source.pattern[s][step] && !muted[s]) VOICES[inst.key](ctx, master, time);
   });
-  if (kaynak.basDesen[adim] && !basSusturuldu)
-    basNotasi(ctx, ana, zaman, derecininFrekansi(kaynak.basDesen[adim]), Math.min(0.55, s16 * 1.7));
-  kuyruk.push({ adim, zaman, slot: sarkiModu ? calanSlot : -1 });
+  if (source.bassPattern[step] && !bassMuted)
+    bassNote(ctx, master, time, degreeFreq(source.bassPattern[step]), Math.min(0.55, s16 * 1.7));
+  queue.push({ step, time, slot: songMode ? playingSlot : -1 });
 }
 
-function tarayici(){
-  while (siradakiZaman < ctx.currentTime + PENCERE){
-    randevuVer(siradakiAdim, siradakiZaman);
-    bir16lik();
+function scheduler(){
+  while (nextTime < ctx.currentTime + SCHEDULE_AHEAD){
+    scheduleStep(nextStep, nextTime);
+    advanceStep();
   }
 }
 
-let gorunenAdim = -1, gorunenSlot = -1;
-function ciz(){
-  while (kuyruk.length && kuyruk[0].zaman <= ctx.currentTime){
-    const g = kuyruk.shift();
-    gorunenAdim = g.adim; gorunenSlot = g.slot;
+let shownStep = -1, shownSlot = -1;
+function draw(){
+  while (queue.length && queue[0].time <= ctx.currentTime){
+    const g = queue.shift();
+    shownStep = g.step; shownSlot = g.slot;
   }
-  if (gorunenAdim >= 0){
-    numaralar.forEach((n, i) => {
-      n.classList.toggle('on', i === gorunenAdim);
-      n.classList.toggle('iz', i === (gorunenAdim + ADIM_SAYISI - 1) % ADIM_SAYISI);
+  if (shownStep >= 0){
+    numbers.forEach((n, i) => {
+      n.classList.toggle('on', i === shownStep);
+      n.classList.toggle('trail', i === (shownStep + STEP_COUNT - 1) % STEP_COUNT);
     });
-    hucreler.forEach(satir => satir.forEach((h, i) => h.classList.toggle('simdi', i === gorunenAdim)));
-    basHucreleri.forEach(satir => satir.forEach((h, i) => h.classList.toggle('simdi', i === gorunenAdim)));
-    slotlar.forEach((b, i) => b.classList.toggle('caliyor', i === gorunenSlot));
+    cells.forEach(row => row.forEach((h, i) => h.classList.toggle('now', i === shownStep)));
+    bassCells.forEach(row => row.forEach((h, i) => h.classList.toggle('now', i === shownStep)));
+    slots.forEach((b, i) => b.classList.toggle('playing', i === shownSlot));
   }
-  if (calisiyor) requestAnimationFrame(ciz);
+  if (playing) requestAnimationFrame(draw);
 }
 
-function baslat(){
-  sesiKur();
+function start(){
+  initAudio();
   if (ctx.state === 'suspended') ctx.resume();
-  calisiyor = true;
-  siradakiAdim = 0;
-  calanSlot = doluSlotlar()[0] ?? 0;
-  siradakiZaman = ctx.currentTime + 0.05;
-  kuyruk = [];
-  zamanlayici = setInterval(tarayici, BAKIS);
-  requestAnimationFrame(ciz);
-  calBtn.textContent = '■ DUR';
-  calBtn.classList.add('calisiyor');
+  playing = true;
+  nextStep = 0;
+  playingSlot = filledSlots()[0] ?? 0;
+  nextTime = ctx.currentTime + 0.05;
+  queue = [];
+  timer = setInterval(scheduler, LOOKAHEAD_MS);
+  requestAnimationFrame(draw);
+  playBtn.textContent = '■ STOP';
+  playBtn.classList.add('playing');
 }
 
-function durdur(){
-  calisiyor = false;
-  clearInterval(zamanlayici);
-  calBtn.textContent = '▶ ÇAL';
-  calBtn.classList.remove('calisiyor');
-  gorunenAdim = -1; gorunenSlot = -1;
-  numaralar.forEach(n => n.classList.remove('on','iz'));
-  hucreler.forEach(satir => satir.forEach(h => h.classList.remove('simdi')));
-  basHucreleri.forEach(satir => satir.forEach(h => h.classList.remove('simdi')));
-  slotlar.forEach(b => b.classList.remove('caliyor'));
+function stop(){
+  playing = false;
+  clearInterval(timer);
+  playBtn.textContent = '▶ PLAY';
+  playBtn.classList.remove('playing');
+  shownStep = -1; shownSlot = -1;
+  numbers.forEach(n => n.classList.remove('on','trail'));
+  cells.forEach(row => row.forEach(h => h.classList.remove('now')));
+  bassCells.forEach(row => row.forEach(h => h.classList.remove('now')));
+  slots.forEach(b => b.classList.remove('playing'));
 }
 
 /* ============================================================
-   WAV ÜRETİMİ
-   Aynı ses kodunu bu kez hoparlöre değil, OfflineAudioContext'e
-   çalıyoruz. O da gerçek zamanı beklemeden bütün sesi hesaplayıp
-   ham örnekler olarak veriyor; biz de başına WAV başlığı yazıp
-   dosya haline getiriyoruz.
+   WAV EXPORT
+   The same sound code, but this time it plays into an
+   OfflineAudioContext instead of the speakers. That renders the
+   whole thing without waiting for real time and hands back raw
+   samples; we write a WAV header in front of them and call it a file.
    ============================================================ */
-function wavYap(buf){
-  const kanal = buf.numberOfChannels, orneklem = buf.sampleRate;
-  const veriBoyu = buf.length * kanal * 2;
-  const ab = new ArrayBuffer(44 + veriBoyu);
+function encodeWav(buf){
+  const channels = buf.numberOfChannels, sampleRate = buf.sampleRate;
+  const dataSize = buf.length * channels * 2;
+  const ab = new ArrayBuffer(44 + dataSize);
   const g = new DataView(ab);
-  const yaz = (o, s) => { for (let i = 0; i < s.length; i++) g.setUint8(o + i, s.charCodeAt(i)); };
+  const write = (o, s) => { for (let i = 0; i < s.length; i++) g.setUint8(o + i, s.charCodeAt(i)); };
 
-  yaz(0, 'RIFF');  g.setUint32(4, 36 + veriBoyu, true);  yaz(8, 'WAVE');
-  yaz(12, 'fmt '); g.setUint32(16, 16, true);            g.setUint16(20, 1, true);
-  g.setUint16(22, kanal, true);                          g.setUint32(24, orneklem, true);
-  g.setUint32(28, orneklem * kanal * 2, true);           g.setUint16(32, kanal * 2, true);
+  write(0, 'RIFF');  g.setUint32(4, 36 + dataSize, true);  write(8, 'WAVE');
+  write(12, 'fmt '); g.setUint32(16, 16, true);            g.setUint16(20, 1, true);
+  g.setUint16(22, channels, true);                         g.setUint32(24, sampleRate, true);
+  g.setUint32(28, sampleRate * channels * 2, true);        g.setUint16(32, channels * 2, true);
   g.setUint16(34, 16, true);
-  yaz(36, 'data'); g.setUint32(40, veriBoyu, true);
+  write(36, 'data'); g.setUint32(40, dataSize, true);
 
-  const kanallar = [];
-  for (let k = 0; k < kanal; k++) kanallar.push(buf.getChannelData(k));
+  const chans = [];
+  for (let k = 0; k < channels; k++) chans.push(buf.getChannelData(k));
   let o = 44;
   for (let i = 0; i < buf.length; i++){
-    for (let k = 0; k < kanal; k++){
-      const v = Math.max(-1, Math.min(1, kanallar[k][i]));
+    for (let k = 0; k < channels; k++){
+      const v = Math.max(-1, Math.min(1, chans[k][i]));
       g.setInt16(o, v < 0 ? v * 0x8000 : v * 0x7FFF, true);
       o += 2;
     }
@@ -1291,101 +1327,101 @@ function wavYap(buf){
   return new Blob([ab], { type:'audio/wav' });
 }
 
-async function wavUret(){
-  bolumuIsle();
-  const dolu = doluSlotlar();
-  // şarkı modunda dizilimin tamamı, döngü modunda seçili bölüm 4 tur
-  const sira = sarkiModu && dolu.length ? dolu.map(i => bolumler[dizilim[i]])
-                                        : Array(4).fill({ desen, basDesen });
-  if (!sira.some(bolumDolu)) { bildir('Çalacak bir şey yok — önce ızgarayı doldur', 'hata'); return null; }
+async function renderWav(){
+  commitSection();
+  const filled = filledSlots();
+  // in song mode the whole arrangement, in loop mode the selected section four times
+  const order = songMode && filled.length ? filled.map(i => sections[arrangement[i]])
+                                          : Array(4).fill({ pattern, bassPattern });
+  if (!order.some(sectionHasContent)) { notify('Nothing to play — fill the grid in first', 'error'); return null; }
 
-  const s16 = 60 / bpmDegeri() / 4;
+  const s16 = 60 / bpmValue() / 4;
   const sw = swing.value / 100;
-  const toplam = sira.length * ADIM_SAYISI * s16 + 1.6;   // son seslerin sönmesi için pay
-  const orneklem = 44100;
-  const K = new OfflineAudioContext(1, Math.ceil(toplam * orneklem), orneklem);
-  const cikis = K.createGain();
-  cikis.gain.value = ses.value / 100;
-  cikis.connect(K.destination);
+  const total = order.length * STEP_COUNT * s16 + 1.6;   // headroom for the last sounds to fade
+  const sampleRate = 44100;
+  const K = new OfflineAudioContext(1, Math.ceil(total * sampleRate), sampleRate);
+  const out = K.createGain();
+  out.gain.value = volume.value / 100;
+  out.connect(K.destination);
 
   let t = 0.05;
-  sira.forEach(bolum => {
-    for (let adim = 0; adim < ADIM_SAYISI; adim++){
-      ENSTRUMANLAR.forEach((ens, s) => {
-        if (bolum.desen[s][adim] && !susturulan[s]) SESLER[ens.anahtar](K, cikis, t);
+  order.forEach(section => {
+    for (let step = 0; step < STEP_COUNT; step++){
+      INSTRUMENTS.forEach((inst, s) => {
+        if (section.pattern[s][step] && !muted[s]) VOICES[inst.key](K, out, t);
       });
-      if (bolum.basDesen[adim] && !basSusturuldu)
-        basNotasi(K, cikis, t, derecininFrekansi(bolum.basDesen[adim]), Math.min(0.55, s16 * 1.7));
-      t += (adim % 2 === 0) ? s16 * (1 + sw) : s16 * (1 - sw);
+      if (section.bassPattern[step] && !bassMuted)
+        bassNote(K, out, t, degreeFreq(section.bassPattern[step]), Math.min(0.55, s16 * 1.7));
+      t += (step % 2 === 0) ? s16 * (1 + sw) : s16 * (1 - sw);
     }
   });
 
-  return wavYap(await K.startRendering());
+  return encodeWav(await K.startRendering());
 }
 
 wavBtn.onclick = async () => {
   wavBtn.disabled = true;
-  const eskiYazi = wavBtn.textContent;
-  wavBtn.textContent = 'HAZIRLANIYOR…';
+  const oldText = wavBtn.textContent;
+  wavBtn.textContent = 'RENDERING…';
   try {
-    const blob = await wavUret();
+    const blob = await renderWav();
     if (blob){
-      let ad = 'ritim';
-      if (secili?.tur === 'ritim') ad = TUM_RITIMLER[secili.no].ad;
-      else if (secili?.tur === 'sarki') ad = SARKILAR[secili.no].ad;
-      else if (secili?.tur === 'kayit') ad = secili.ad;
-      const dosyaAdi = ingilizceHarfe(ad) + '.wav';
-      dosyayaIndir(blob, dosyaAdi);
-      bildir(`${dosyaAdi} indirildi (${(blob.size / 1024 / 1024).toFixed(1)} MB)`);
+      let label = 'ritim';
+      if (selected?.type === 'pattern') label = ALL_PATTERNS[selected.no].name;
+      else if (selected?.type === 'song') label = SONGS[selected.no].name;
+      else if (selected?.type === 'saved') label = selected.name;
+      const fileName = toAsciiName(label) + '.wav';
+      downloadFile(blob, fileName);
+      notify(`${fileName} downloaded (${(blob.size / 1024 / 1024).toFixed(1)} MB)`);
     }
   } catch(e){
-    bildir('Ses dosyası üretilemedi', 'hata');
+    notify('Could not render the audio file', 'error');
   }
-  wavBtn.textContent = eskiYazi;
+  wavBtn.textContent = oldText;
   wavBtn.disabled = false;
 };
 
 /* ============================================================
-   KONTROLLER
+   CONTROLS
    ============================================================ */
-calBtn.onclick = () => calisiyor ? durdur() : baslat();
+playBtn.onclick = () => playing ? stop() : start();
 
-modDongu.onclick = () => { sarkiModu = false; dizilimiTazele(); kaydet(); };
-modSarki.onclick = () => {
-  sarkiModu = true; dizilimiTazele(); kaydet();
-  if (calisiyor) calanSlot = doluSlotlar()[0] ?? 0;
+modeLoop.onclick = () => { songMode = false; refreshArrangement(); persist(); };
+modeSong.onclick = () => {
+  songMode = true; refreshArrangement(); persist();
+  if (playing) playingSlot = filledSlots()[0] ?? 0;
 };
 
-bpm.oninput   = () => { secili = null; yazilariTazele(); butonlariTazele(); kaydet(); };
-swing.oninput = () => { secili = null; yazilariTazele(); butonlariTazele(); kaydet(); };
-ses.oninput   = () => {
-  document.getElementById('sesYazi').textContent = ses.value;
-  if (ana) ana.gain.value = ses.value / 100;
+bpm.oninput    = () => { selected = null; refreshLabels(); refreshButtons(); persist(); };
+swing.oninput  = () => { selected = null; refreshLabels(); refreshButtons(); persist(); };
+volume.oninput = () => {
+  document.getElementById('volVal').textContent = volume.value;
+  if (master) master.gain.value = volume.value / 100;
 };
 
-kokSec.onchange  = () => { kokMidi = Number(kokSec.value); yazilariTazele(); kaydet(); };
-diziSec.onchange = () => { diziAdi = diziSec.value; yazilariTazele(); kaydet(); };
+rootSel.onchange  = () => { rootMidi = Number(rootSel.value); refreshLabels(); persist(); };
+scaleSel.onchange = () => { scaleName = scaleSel.value; refreshLabels(); persist(); };
 
-document.getElementById('basSustur').onclick = () => { basSusturuldu = !basSusturuldu; ekraniTazele(); kaydet(); };
-document.getElementById('basTemizle').onclick = () => { basDesen.fill(0); elleDegisti(); };
+document.getElementById('bassMute').onclick = () => { bassMuted = !bassMuted; refreshGrid(); persist(); };
+document.getElementById('bassClear').onclick = () => { bassPattern.fill(0); editedByHand(); };
 
-document.getElementById('temizle').onclick = () => {
-  desen = ENSTRUMANLAR.map(() => new Array(ADIM_SAYISI).fill(false));
-  basDesen = new Array(ADIM_SAYISI).fill(0);
-  bolumler[aktifBolum] = { desen, basDesen };
-  elleDegisti();
+document.getElementById('clearBtn').onclick = () => {
+  pattern = INSTRUMENTS.map(() => new Array(STEP_COUNT).fill(false));
+  bassPattern = new Array(STEP_COUNT).fill(0);
+  sections[activeSection] = { pattern, bassPattern };
+  editedByHand();
 };
 
 document.addEventListener('keydown', e => {
-  const yaziAlani = e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT';
-  if (e.code === 'Space' && !yaziAlani){ e.preventDefault(); calisiyor ? durdur() : baslat(); }
-  // 1-4 tuşları bölümler arasında gezdirir
-  if (!yaziAlani && ['Digit1','Digit2','Digit3','Digit4'].includes(e.code)){
-    bolumeGec(Number(e.code.slice(-1)) - 1);
+  const inTextField = e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT';
+  if (e.code === 'Space' && !inTextField){ e.preventDefault(); playing ? stop() : start(); }
+  // keys 1-4 move between sections
+  if (!inTextField && ['Digit1','Digit2','Digit3','Digit4'].includes(e.code)){
+    gotoSection(Number(e.code.slice(-1)) - 1);
   }
 });
 
-yukle();
+restore();
 </script>
 </body>
 </html>
