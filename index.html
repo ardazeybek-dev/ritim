@@ -676,6 +676,24 @@ const readSection = b => ({
   bass: b.bass ?? b.bas
 });
 
+/* Two scale keys were renamed with the rest of the code. Without this, a song
+   saved in Pentatonik or Frigyen would quietly come back in minor. */
+const SCALE_ALIASES = { pentatonik: 'pentatonic', frigyen: 'phrygian' };
+const readScale = s => SCALE_ALIASES[s] ?? s;
+
+/* A song saved by an older version has Turkish field names. Rename them once,
+   on the way in, so nothing downstream has to know the old shape — otherwise a
+   song saved before the rename shows up with a blank name and cannot be loaded. */
+const readSong = s => (s && s.name === undefined && s.ad !== undefined) ? {
+  ...s,
+  name: s.ad,
+  root: s.root ?? s.kok,
+  scale: readScale(s.scale ?? s.dizi),
+  arrangement: s.arrangement ?? s.dizilim,
+  songMode: s.songMode ?? s.sarkiModu,
+  sections: (s.sections ?? s.bolumler ?? []).map(b => readSection(b))
+} : s;
+
 /* set a stored song object up on screen */
 function applySong(s){
   const list = s.sections ?? s.bolumler;
@@ -689,7 +707,7 @@ function applySong(s){
   bpm.value = s.bpm; swing.value = s.swing;
   const root = s.root ?? s.kok;
   if (Number.isInteger(root)) rootMidi = root;
-  const scale = s.scale ?? s.dizi;
+  const scale = readScale(s.scale ?? s.dizi);
   if (SCALES[scale]) scaleName = scale;
   gotoSection(0, true);
 }
@@ -708,6 +726,7 @@ function restore(){
                          ?? localStorage.getItem('ritim-kayitlarim')) || [];
   } catch(e){ savedSongs = []; }
   if (!Array.isArray(savedSongs)) savedSongs = [];
+  savedSongs = savedSongs.map(readSong).filter(s => s && typeof s.name === 'string');
   drawSaved();
 
   let k = null;
@@ -742,7 +761,7 @@ function restore(){
   bpm.value = k.bpm; swing.value = k.swing;
   const root = k.rootMidi ?? k.kokMidi;
   if (Number.isInteger(root)) rootMidi = root;
-  const scale = k.scaleName ?? k.diziAdi;
+  const scale = readScale(k.scaleName ?? k.diziAdi);
   if (SCALES[scale]) scaleName = scale;
   const sel = k.selected ?? k.secili;
   selected = (sel && typeof sel === 'object') ? sel : null;
@@ -1145,7 +1164,7 @@ fileInput.onchange = () => {
           bpm: Number(k.bpm) || 96,
           swing: Number(k.swing) || 0,
           root: Number.isInteger(k.root ?? k.kok) ? (k.root ?? k.kok) : LOWEST_ROOT,
-          scale: SCALES[k.scale ?? k.dizi] ? (k.scale ?? k.dizi) : 'minor',
+          scale: SCALES[readScale(k.scale ?? k.dizi)] ? readScale(k.scale ?? k.dizi) : 'minor',
           sections: Array.from({length:SECTION_COUNT}, (_, i) => {
             const b = secs[i];
             if (!b) return { rows:Array(INSTRUMENTS.length).fill(EMPTY), bass:EMPTY };
